@@ -1,0 +1,110 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import {
+  LayoutDashboard,
+  Ship,
+  Map,
+  AlertTriangle,
+  BarChart3,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
+import { useDashboardStore } from '../store/useStore'
+import { cn } from '@/lib/utils'
+
+const navItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', view: 'dashboard' as const },
+  { icon: Ship, label: 'Shipments', view: 'shipments' as const },
+  { icon: Map, label: 'Live Map', view: 'map' as const },
+  { icon: AlertTriangle, label: 'Alerts', view: 'alerts' as const },
+  { icon: BarChart3, label: 'Analytics', view: 'analytics' as const },
+  { icon: Settings, label: 'Settings', view: 'settings' as const },
+]
+
+export function Sidebar() {
+  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, backendOnline } = useDashboardStore()
+
+  return (
+    <motion.aside
+      initial={false}
+      animate={{ width: sidebarCollapsed ? 72 : 240 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed left-0 top-0 z-40 h-screen glass-card border-r border-white/10"
+    >
+      <div className="flex h-full flex-col">
+        {/* Logo */}
+        <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
+          <motion.div
+            initial={false}
+            animate={{ opacity: sidebarCollapsed ? 0 : 1 }}
+            className="flex items-center gap-2"
+          >
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center flex-shrink-0">
+              <span className="font-bold text-background text-sm">N</span>
+            </div>
+            {!sidebarCollapsed && (
+              <span className="font-bold text-lg tracking-tight text-white">NEXUS</span>
+            )}
+          </motion.div>
+          <button
+            onClick={toggleSidebar}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-3">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = activeView === item.view
+              return (
+                <li key={item.label}>
+                  <button
+                    onClick={() => setActiveView(item.view)}
+                    className={cn(
+                      'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-200',
+                      isActive
+                        ? 'bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5',
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        'h-5 w-5 flex-shrink-0',
+                        isActive && 'drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]',
+                      )}
+                    />
+                    {!sidebarCollapsed && (
+                      <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+
+        {/* Status indicator */}
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                'h-2 w-2 rounded-full',
+                backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500',
+              )}
+            />
+            {!sidebarCollapsed && (
+              <span className="text-xs text-slate-400">
+                {backendOnline ? 'System Online' : 'Backend Offline'}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.aside>
+  )
+}
