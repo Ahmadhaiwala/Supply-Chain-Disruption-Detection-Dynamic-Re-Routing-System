@@ -41,8 +41,27 @@ export function Sidebar() {
             animate={{ opacity: sidebarCollapsed ? 0 : 1 }}
             className="flex items-center gap-2"
           >
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center flex-shrink-0">
-              <span className="font-bold text-background text-sm">N</span>
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <svg width="28" height="28" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Route lines */}
+                <line x1="32" y1="90" x2="148" y2="90" stroke="#06b6d4" strokeWidth="8" strokeLinecap="round"/>
+                <line x1="90" y1="32" x2="90" y2="148" stroke="#06b6d4" strokeWidth="8" strokeLinecap="round"/>
+                <line x1="42" y1="42" x2="138" y2="138" stroke="#a5f3fc" strokeWidth="5" strokeLinecap="round" opacity="0.6"/>
+                <line x1="138" y1="42" x2="42" y2="138" stroke="#a5f3fc" strokeWidth="5" strokeLinecap="round" opacity="0.6"/>
+                {/* Hub nodes */}
+                <circle cx="90" cy="90" r="28" fill="#0e7490"/>
+                <circle cx="32" cy="90" r="12" fill="#06b6d4"/>
+                <circle cx="148" cy="90" r="12" fill="#06b6d4"/>
+                <circle cx="90" cy="32" r="12" fill="#06b6d4"/>
+                <circle cx="90" cy="148" r="12" fill="#06b6d4"/>
+                {/* Truck body */}
+                <rect x="68" y="80" width="30" height="18" rx="3" fill="white"/>
+                <rect x="98" y="84" width="16" height="14" rx="2" fill="white"/>
+                <rect x="100" y="86" width="10" height="7" rx="1" fill="#0e7490" opacity="0.8"/>
+                {/* Wheels */}
+                <circle cx="76" cy="100" r="6" fill="#0e7490"/>
+                <circle cx="104" cy="100" r="6" fill="#0e7490"/>
+              </svg>
             </div>
             {!sidebarCollapsed && (
               <span className="font-bold text-lg tracking-tight text-white">NEXUS</span>
