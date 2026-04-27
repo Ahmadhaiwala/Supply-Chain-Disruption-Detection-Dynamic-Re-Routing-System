@@ -1,6 +1,7 @@
 """
-Seed script — populates the SQLite database with real shipments
-from the Kaggle Delivery Truck Trips dataset.
+Seed script — USA Dynamic Supply Chain Logistics Dataset.
+Generates realistic shipments across US corridors using the dataset's
+GPS coordinates, risk scores, and sensor readings.
 
 Usage:
     cd backend
@@ -9,122 +10,145 @@ Usage:
 import asyncio
 import sys
 import logging
+import random
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pandas as pd
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from database import init_db, AsyncSessionLocal
 from models.db_models import Shipment, Alert
+from routing.graph_router import USA_NODES, haversine_km
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-CSV_PATH = Path(__file__).parent / "data" / "delivery_truck_trips.csv"
+CSV_PATH = Path(__file__).parent / "data" / "dynamic_supply_chain_logistics_dataset.csv"
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# ── US city name lookup ────────────────────────────────────────────────────────
+CITY_NAMES = {name: name.replace("_", " ") for name in USA_NODES}
 
-def parse_latlon(s: str):
-    """Parse '13.155,80.196' → (13.155, 80.196)"""
-    try:
-        parts = str(s).split(",")
-        return float(parts[0].strip()), float(parts[1].strip())
-    except Exception:
-        return None, None
+# ── Cargo types for US logistics ──────────────────────────────────────────────
+CARGO_TYPES = [
+    "Electronics", "Automotive Parts", "Pharmaceuticals", "Food & Beverage",
+    "Industrial Equipment", "Consumer Goods", "Chemicals", "Refrigerated Goods",
+    "Hazardous Materials", "E-commerce Parcels",
+]
+
+VEHICLE_TYPES = [
+    "53ft Dry Van", "48ft Flatbed", "Reefer Trailer", "Tanker",
+    "Step Deck", "Double Drop", "LTL Freight", "Intermodal Container",
+]
+
+CARRIERS = [
+    "J.B. Hunt Transport", "Werner Enterprises", "Schneider National",
+    "Swift Transportation", "Knight Transportation", "Old Dominion Freight",
+    "XPO Logistics", "FedEx Freight", "UPS Freight", "Amazon Logistics",
+    "C.H. Robinson", "Echo Global Logistics",
+]
+
+# ── Major US origin-destination pairs ─────────────────────────────────────────
+OD_PAIRS = [
+    ("Los_Angeles", "Chicago"),
+    ("New_York", "Miami"),
+    ("Chicago", "Dallas"),
+    ("Houston", "Atlanta"),
+    ("Seattle", "Los_Angeles"),
+    ("Boston", "Washington_DC"),
+    ("Denver", "Kansas_City"),
+    ("Atlanta", "Nashville"),
+    ("Dallas", "Houston"),
+    ("Philadelphia", "Charlotte"),
+    ("Minneapolis", "Chicago"),
+    ("San_Francisco", "Seattle"),
+    ("Miami", "Orlando"),
+    ("Detroit", "Cleveland"),
+    ("Memphis", "St_Louis"),
+    ("Louisville", "Indianapolis"),
+    ("Savannah_Port", "Atlanta"),
+    ("LA_Port", "Phoenix"),
+    ("Houston_Port", "Dallas"),
+    ("NY_Port", "Philadelphia"),
+]
 
 
-def risk_from_delay(row) -> tuple[float, str]:
-    """Derive a risk score and level from the delay flag."""
-    is_delayed = str(row.get("delay", "")).strip().upper() == "R"
-    dist = float(row.get("TRANSPORTATION_DISTANCE_IN_KM", 100) or 100)
-
-    if is_delayed:
-        # Longer delayed trips = higher risk
-        score = min(0.95, 0.65 + (dist / 10000))
-        level = "HIGH" if score > 0.70 else "MEDIUM"
+def risk_from_classification(risk_class: str, disruption_score: float) -> tuple:
+    if risk_class == "High Risk" or disruption_score > 0.80:
+        if disruption_score > 0.88:
+            score = min(0.97, 0.85 + disruption_score * 0.12)
+            level = "CRITICAL"
+        else:
+            score = min(0.95, 0.72 + disruption_score * 0.22)
+            level = "HIGH"
+    elif risk_class == "Moderate Risk" or disruption_score > 0.45:
+        score = 0.42 + disruption_score * 0.25
+        level = "MEDIUM"
     else:
-        score = max(0.05, 0.10 + (dist / 20000))
+        score = max(0.04, disruption_score * 0.38)
         level = "LOW"
     return round(score, 3), level
 
-
-def map_cargo(material: str) -> str:
-    if not material or pd.isna(material):
-        return "AUTO PARTS"
-    return str(material).strip()[:100]
-
-
-def map_vehicle(vtype: str) -> str:
-    if not vtype or pd.isna(vtype):
-        return "HCV"
-    return str(vtype).strip()[:50]
-
-
-def shorten_location(loc: str) -> str:
-    """'ASHOK LEYLAND PLANT 1- HOSUR,HOSUR,KARNATAKA' → 'Hosur, Karnataka'"""
-    if not loc or pd.isna(loc):
-        return "Unknown"
-    parts = str(loc).split(",")
-    if len(parts) >= 2:
-        return f"{parts[-2].strip().title()}, {parts[-1].strip().title()}"
-    return str(loc)[:80]
-
-
-# ── Main seeder ────────────────────────────────────────────────────────────────
 
 async def seed():
     await init_db()
 
     df = pd.read_csv(CSV_PATH)
-    logger.info("Loaded %d rows from CSV", len(df))
+    logger.info("Loaded %d rows from dataset", len(df))
 
-    # Parse timestamps
-    for col in ["trip_start_date", "Planned_ETA", "actual_eta"]:
-        df[col] = pd.to_datetime(df[col], errors="coerce")
-
-    # Pick a diverse sample:
-    # - 8 delayed (high/medium risk)
-    # - 12 on-time (low risk)
-    # - varied origins, distances, vehicle types
-    delayed = df[df["delay"] == "R"].dropna(
-        subset=["Org_lat_lon", "Des_lat_lon", "TRANSPORTATION_DISTANCE_IN_KM"]
-    ).drop_duplicates(subset=["Org_lat_lon"]).head(8)
-
-    ontime = df[df["ontime"] == "G"].dropna(
-        subset=["Org_lat_lon", "Des_lat_lon", "TRANSPORTATION_DISTANCE_IN_KM"]
-    ).drop_duplicates(subset=["Org_lat_lon"]).head(12)
-
-    sample = pd.concat([delayed, ontime]).reset_index(drop=True)
-    logger.info("Seeding %d shipments", len(sample))
+    # Skew heavily toward high/critical risk for a realistic dashboard view:
+    # 10 High Risk + 5 Moderate + 5 Low = 20 total
+    high_risk = df[df["risk_classification"] == "High Risk"].sample(10, random_state=42)
+    moderate  = df[df["risk_classification"] == "Moderate Risk"].sample(5, random_state=42)
+    low_risk  = df[df["risk_classification"] == "Low Risk"].sample(5, random_state=42)
+    sample = pd.concat([high_risk, moderate, low_risk]).reset_index(drop=True)
 
     async with AsyncSessionLocal() as session:
-        # Clear existing seed data
         from sqlalchemy import delete
         await session.execute(delete(Alert))
         await session.execute(delete(Shipment))
         await session.commit()
-        logger.info("Cleared existing shipments and alerts")
+        logger.info("Cleared existing data")
 
         shipments_created = []
+        rng = random.Random(42)
 
-        for _, row in sample.iterrows():
-            booking_id = str(row["BookingID"]).strip()
-            org_lat, org_lon = parse_latlon(row["Org_lat_lon"])
-            des_lat, des_lon = parse_latlon(row["Des_lat_lon"])
+        for i, (_, row) in enumerate(sample.iterrows()):
+            # Pick an OD pair
+            od = OD_PAIRS[i % len(OD_PAIRS)]
+            origin_name, dest_name = od
+            org_lat, org_lon = USA_NODES[origin_name]
+            des_lat, des_lon = USA_NODES[dest_name]
 
-            if org_lat is None or des_lat is None:
-                continue
+            # Use dataset GPS as current position (it's mid-route)
+            curr_lat = float(row["vehicle_gps_latitude"])
+            curr_lon = float(row["vehicle_gps_longitude"])
 
-            risk_score, risk_level = risk_from_delay(row)
-            is_delayed = str(row.get("delay", "")).strip().upper() == "R"
+            # Clamp to continental USA
+            curr_lat = max(25.0, min(49.0, curr_lat))
+            curr_lon = max(-125.0, min(-66.0, curr_lon))
 
-            # Simulate current position: 30% of the way along the route
-            curr_lat = org_lat + (des_lat - org_lat) * 0.30
-            curr_lon = org_lon + (des_lon - org_lon) * 0.30
+            risk_class = row["risk_classification"]
+            disruption_score = float(row["disruption_likelihood_score"])
+            risk_score, risk_level = risk_from_classification(risk_class, disruption_score)
 
-            status = "DELAYED" if is_delayed else "IN_TRANSIT"
+            is_delayed = risk_class in ("High Risk", "Moderate Risk")
+            status = "DELAYED" if risk_class == "High Risk" else (
+                "IN_TRANSIT" if risk_class == "Moderate Risk" else "IN_TRANSIT"
+            )
+
+            dist_km = haversine_km(org_lat, org_lon, des_lat, des_lon)
+
+            # Generate booking ID
+            booking_id = f"US-{origin_name[:3].upper()}-{dest_name[:3].upper()}-{1000 + i:04d}"
+
+            # Planned ETA: distance / 65mph average
+            trip_hours = dist_km / 104.6  # 65mph in km/h
+            now = datetime.now(timezone.utc)
+            planned_eta = now + timedelta(hours=trip_hours * rng.uniform(0.8, 1.2))
+            trip_start = now - timedelta(hours=trip_hours * 0.3)
 
             shipment = Shipment(
                 booking_id=booking_id,
@@ -134,58 +158,104 @@ async def seed():
                 destination_lon=des_lon,
                 current_lat=round(curr_lat, 6),
                 current_lon=round(curr_lon, 6),
-                planned_eta=row["Planned_ETA"] if pd.notna(row["Planned_ETA"]) else None,
-                actual_eta=row["actual_eta"] if pd.notna(row.get("actual_eta")) else None,
-                trip_start=row["trip_start_date"] if pd.notna(row["trip_start_date"]) else None,
-                vehicle_type=map_vehicle(row.get("vehicleType")),
-                distance_km=float(row["TRANSPORTATION_DISTANCE_IN_KM"]),
-                cargo_type=map_cargo(row.get("Material Shipped")),
-                carrier_id=str(row.get("supplierNameCode", "UNKNOWN"))[:50],
+                planned_eta=planned_eta,
+                trip_start=trip_start,
+                vehicle_type=rng.choice(VEHICLE_TYPES),
+                distance_km=round(dist_km, 1),
+                cargo_type=rng.choice(CARGO_TYPES),
+                carrier_id=rng.choice(CARRIERS),
                 status=status,
                 is_delayed=is_delayed,
                 current_risk_score=risk_score,
                 risk_level=risk_level,
             )
             session.add(shipment)
-            shipments_created.append((booking_id, risk_level, is_delayed))
+            shipments_created.append({
+                "booking_id": booking_id,
+                "origin": origin_name,
+                "dest": dest_name,
+                "risk_level": risk_level,
+                "risk_score": risk_score,
+                "is_delayed": is_delayed,
+                "traffic": float(row["traffic_congestion_level"]),
+                "weather": float(row["weather_condition_severity"]),
+            })
 
         await session.commit()
         logger.info("✅ Inserted %d shipments", len(shipments_created))
 
-        # Seed alerts for high-risk / delayed shipments
-        alerts_data = []
-        for booking_id, risk_level, is_delayed in shipments_created:
-            if risk_level == "HIGH":
-                alerts_data.append(Alert(
-                    booking_id=booking_id,
+        # Seed alerts
+        alert_messages = {
+            "HIGH": [
+                "HIGH delay risk detected. Immediate rerouting recommended.",
+                "Traffic congestion exceeds threshold on current route.",
+                "Weather advisory: severe conditions ahead. Consider alternate route.",
+                "Driver fatigue alert. Rest stop required within 2 hours.",
+            ],
+            "MEDIUM": [
+                "Moderate delay risk. Monitor shipment closely.",
+                "Port congestion reported at destination. Expect 2-4 hour delay.",
+                "Weather conditions deteriorating on route. Prepare alternatives.",
+            ],
+        }
+
+        alerts_added = 0
+        for s in shipments_created:
+            if s["risk_level"] == "HIGH":
+                msgs = alert_messages["HIGH"]
+                severity = "HIGH"
+                # Add traffic alert if congestion is high
+                if s["traffic"] > 7:
+                    session.add(Alert(
+                        booking_id=s["booking_id"],
+                        alert_type="TRAFFIC",
+                        severity="HIGH",
+                        message=f"[{s['booking_id']}] Traffic congestion level {s['traffic']:.1f}/10 on {s['origin'].replace('_',' ')} → {s['dest'].replace('_',' ')} corridor.",
+                        is_acknowledged=False,
+                    ))
+                    alerts_added += 1
+                # Add weather alert if severe
+                if s["weather"] > 3:
+                    session.add(Alert(
+                        booking_id=s["booking_id"],
+                        alert_type="WEATHER",
+                        severity="HIGH",
+                        message=f"[{s['booking_id']}] Severe weather (severity {s['weather']:.1f}/10) on route. Rerouting recommended.",
+                        is_acknowledged=False,
+                    ))
+                    alerts_added += 1
+                session.add(Alert(
+                    booking_id=s["booking_id"],
                     alert_type="DELAY_RISK",
-                    severity="HIGH",
-                    message=f"Shipment {booking_id} has HIGH delay risk. Immediate rerouting recommended.",
+                    severity=severity,
+                    message=f"[{s['booking_id']}] {rng.choice(msgs)}",
                     is_acknowledged=False,
                 ))
-            elif risk_level == "MEDIUM" or is_delayed:
-                alerts_data.append(Alert(
-                    booking_id=booking_id,
+                alerts_added += 1
+
+            elif s["risk_level"] == "MEDIUM":
+                session.add(Alert(
+                    booking_id=s["booking_id"],
                     alert_type="DELAY_RISK",
                     severity="MEDIUM",
-                    message=f"Shipment {booking_id} is experiencing delays. Monitor closely.",
+                    message=f"[{s['booking_id']}] {rng.choice(alert_messages['MEDIUM'])}",
                     is_acknowledged=False,
                 ))
+                alerts_added += 1
 
-        for alert in alerts_data:
-            session.add(alert)
         await session.commit()
-        logger.info("✅ Inserted %d alerts", len(alerts_data))
+        logger.info("✅ Inserted %d alerts", alerts_added)
 
-    # Print summary
-    print("\n" + "="*60)
-    print("SEED SUMMARY")
-    print("="*60)
-    for booking_id, risk_level, is_delayed in shipments_created:
-        status = "DELAYED" if is_delayed else "ON TIME"
-        print(f"  {booking_id:<30} {risk_level:<8} {status}")
-    print(f"\nTotal: {len(shipments_created)} shipments, {len(alerts_data)} alerts")
-    print("="*60)
+    # Summary
+    print("\n" + "=" * 70)
+    print("SEED SUMMARY — USA Supply Chain Shipments")
+    print("=" * 70)
+    for s in shipments_created:
+        status = "DELAYED" if s["is_delayed"] else "IN_TRANSIT"
+        print(f"  {s['booking_id']:<28} {s['risk_level']:<8} {status:<12} "
+              f"{s['origin'].replace('_',' '):<18} → {s['dest'].replace('_',' ')}")
+    print(f"\nTotal: {len(shipments_created)} shipments, {alerts_added} alerts")
+    print("=" * 70)
 
 
 if __name__ == "__main__":

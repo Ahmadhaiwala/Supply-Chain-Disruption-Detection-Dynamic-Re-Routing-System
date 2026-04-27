@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, Search, User, X } from 'lucide-react'
+import { Bell, Search, User, X, Plus, FileText } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { AddShipmentDrawer } from './AddShipmentDrawer'
 
 export function Header() {
-  const { sidebarCollapsed, alerts, shipments, setSelectedShipment, setShowRouteModal, setActiveView } =
+  const { sidebarCollapsed, alerts, shipments, setSelectedShipment, setShowRouteModal, setActiveView, setShowReportModal } =
     useDashboardStore()
   const criticalAlerts = alerts.filter((a) => a.severity === 'critical').length
 
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const results = query.trim().length > 1
     ? shipments.filter(
@@ -35,8 +37,9 @@ export function Header() {
   }
 
   return (
-    <header
-      className="fixed top-0 right-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-6"
+    <>
+      <header
+        className="fixed top-0 right-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-6"
       style={{
         left: sidebarCollapsed ? 72 : 240,
         transition: 'left 0.3s ease-in-out',
@@ -108,7 +111,28 @@ export function Header() {
       </div>
 
       {/* Right — Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Quick add shipment */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setDrawerOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add Shipment
+        </motion.button>
+
+        {/* Export Report */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowReportModal(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          Export
+        </motion.button>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -136,5 +160,7 @@ export function Header() {
         </motion.button>
       </div>
     </header>
+    <AddShipmentDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
   )
 }

@@ -60,8 +60,10 @@ async def predict_shipment(payload: PredictionInput, db: AsyncSession = Depends(
         anomaly_score=anomaly_score,
         eta_minutes=eta_median,
         planned_eta_minutes=planned_eta_minutes,
+        disruption_likelihood_score=float(data.get("disruption_likelihood_score", 0.3)),
     )
     recommendation = build_recommendation(risk_level, is_anomaly)
+
 
     # ── Persist prediction log ────────────────────────────────────────────────
     log = PredictionLog(

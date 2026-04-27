@@ -10,6 +10,7 @@ class RiskLevel(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
 
 
 class ShipmentStatus(str, Enum):
@@ -114,6 +115,21 @@ class PredictionInput(BaseModel):
     speed_variance: Optional[float] = None
     stop_count: Optional[int] = None
     route_deviation_km: Optional[float] = None
+
+    # ── USA Dataset fields (sensor & operational) ──────────────────────────
+    fuel_consumption_rate: float = Field(default=5.0, ge=0.0)
+    eta_variation_hours: float = Field(default=0.0)
+    loading_unloading_time: float = Field(default=2.0, ge=0.0)
+    handling_equipment_availability: float = Field(default=0.85, ge=0.0, le=1.0)
+    order_fulfillment_status: float = Field(default=0.9, ge=0.0, le=1.0)
+    port_congestion_level: float = Field(default=3.0, ge=0.0, le=10.0)
+    shipping_costs: float = Field(default=400.0, ge=0.0)
+    lead_time_days: float = Field(default=3.0, ge=0.0)
+    cargo_condition_status: float = Field(default=0.9, ge=0.0, le=1.0)
+    customs_clearance_time: float = Field(default=1.0, ge=0.0)
+    driver_behavior_score: float = Field(default=0.8, ge=0.0, le=1.0)
+    fatigue_monitoring_score: float = Field(default=0.2, ge=0.0, le=1.0)
+    disruption_likelihood_score: float = Field(default=0.3, ge=0.0, le=1.0)
 
 
 class PredictionResponse(BaseModel):

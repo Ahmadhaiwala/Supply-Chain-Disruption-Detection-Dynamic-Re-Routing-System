@@ -49,13 +49,17 @@ export interface ShapFeature {
   shap_value: number
 }
 
+export type ReportInitType = 'SHIPMENT_JOURNEY' | 'OPERATIONS' | 'INCIDENT' | null
+
 interface DashboardState {
   // UI State
   sidebarCollapsed: boolean
   selectedShipmentId: string | null
   showRouteModal: boolean
+  showReportModal: boolean
+  reportInitType: ReportInitType
   activeFilter: 'all' | 'normal' | 'warning' | 'critical'
-  activeView: 'dashboard' | 'shipments' | 'map' | 'alerts' | 'analytics' | 'settings'
+  activeView: 'dashboard' | 'shipments' | 'map' | 'alerts' | 'analytics' | 'settings' | 'replay'
 
   // Loading / error
   isLoadingShipments: boolean
@@ -81,6 +85,7 @@ interface DashboardState {
   toggleSidebar: () => void
   setSelectedShipment: (id: string | null) => void
   setShowRouteModal: (show: boolean) => void
+  setShowReportModal: (show: boolean, initType?: ReportInitType) => void
   setActiveFilter: (filter: 'all' | 'normal' | 'warning' | 'critical') => void
   setActiveView: (view: DashboardState['activeView']) => void
 
@@ -104,6 +109,8 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   sidebarCollapsed: false,
   selectedShipmentId: null,
   showRouteModal: false,
+  showReportModal: false,
+  reportInitType: null,
   activeFilter: 'all',
   activeView: 'dashboard',
 
@@ -137,6 +144,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setSelectedShipment: (id) => set({ selectedShipmentId: id }),
   setShowRouteModal: (show) => set({ showRouteModal: show }),
+  setShowReportModal: (show, initType = null) => set({ showReportModal: show, reportInitType: show ? initType : null }),
   setActiveFilter: (filter) => set({ activeFilter: filter }),
   setActiveView: (view) => set({ activeView: view }),
 

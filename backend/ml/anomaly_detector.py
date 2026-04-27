@@ -53,7 +53,7 @@ class AnomalyDetector:
     def train(self, X_trajectory: np.ndarray) -> dict:
         """
         Train on normal trajectory data only.
-        X_trajectory: shape (n_samples, 3) — [speed_variance, stop_count, route_deviation_km]
+        X_trajectory: shape (n_samples, n_features)
         """
         self.scaler = StandardScaler()
         X_scaled = self.scaler.fit_transform(X_trajectory)

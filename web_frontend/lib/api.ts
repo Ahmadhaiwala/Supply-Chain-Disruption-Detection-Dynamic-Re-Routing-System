@@ -197,6 +197,98 @@ export const routeApi = {
   },
 }
 
+// ─── External (Traffic + Weather) ─────────────────────────────────────────
+
+export interface TrafficResponse {
+  lat: number; lon: number
+  congestion: number
+  congestion_level: number
+  label: 'Light' | 'Moderate' | 'Heavy'
+}
+
+export interface WeatherResponse {
+  lat: number; lon: number
+  severity: number
+  temperature_f: number
+  precipitation_mm: number
+  condition: string
+  wind_speed_mph: number
+}
+
+export interface CorridorResponse {
+  origin: { lat: number; lon: number; congestion: number; weather: WeatherResponse }
+  midpoint: { lat: number; lon: number; congestion: number; weather: WeatherResponse }
+  destination: { lat: number; lon: number; congestion: number; weather: WeatherResponse }
+  summary: {
+    avg_congestion: number
+    max_weather_severity: number
+    corridor_risk: number
+    recommendation: string
+  }
+}
+
+export const externalApi = {
+  traffic: (lat: number, lon: number) =>
+    apiFetch<TrafficResponse>(`/external/traffic?lat=${lat}&lon=${lon}`),
+
+  weather: (lat: number, lon: number) =>
+    apiFetch<WeatherResponse>(`/external/weather?lat=${lat}&lon=${lon}`),
+
+  corridor: (oLat: number, oLon: number, dLat: number, dLon: number) =>
+    apiFetch<CorridorResponse>(
+      `/external/corridor?origin_lat=${oLat}&origin_lon=${oLon}&dest_lat=${dLat}&dest_lon=${dLon}`
+    ),
+}
+
+// ─── History / Replay ──────────────────────────────────────────────────────
+
+export interface HistoryShipment {
+  booking_id: string
+  origin_lat: number; origin_lon: number
+  destination_lat: number; destination_lon: number
+  status: string; risk_level: string
+  current_risk_score: number; is_delayed: boolean
+  distance_km: number | null; cargo_type: string | null; carrier_id: string | null
+  trip_start: string | null; planned_eta: string | null; created_at: string | null
+}
+
+export interface ReplayEvent {
+  id: string
+  type: 'gps_update' | 'alert' | 'disruption' | 'route_exec' | 'prediction' | 'status_change'
+  timestamp: string
+  lat: number | null; lon: number | null
+  details: string
+  risk_score: number | null
+}
+
+export interface PredictionPoint {
+  timestamp: string
+  predicted: number
+  actual: number | null
+  risk_level: string
+}
+
+export interface PerformanceSummary {
+  total_shipments: number; delayed_shipments: number; high_risk_shipments: number
+  prediction_accuracy: number; delays_prevented: number; false_alarms: number
+  avg_early_warning_hours: number; correct_predictions: number; total_predictions: number
+}
+
+export const historyApi = {
+  listShipments: (startDate?: string, endDate?: string, limit = 50) => {
+    const qs = new URLSearchParams({ limit: String(limit) })
+    if (startDate) qs.set('start_date', startDate)
+    if (endDate) qs.set('end_date', endDate)
+    return apiFetch<HistoryShipment[]>(`/history/shipments?${qs}`)
+  },
+  getEvents: (bookingId: string) =>
+    apiFetch<{ booking_id: string; events: ReplayEvent[] }>(`/history/${bookingId}/events`),
+  getPredictions: (bookingId: string) =>
+    apiFetch<{ booking_id: string; series: PredictionPoint[] }>(`/history/${bookingId}/predictions`),
+  getSummary: () =>
+    apiFetch<PerformanceSummary>('/history/summary/metrics'),
+}
+
 // ─── Health ────────────────────────────────────────────────────────────────
 
 export const healthApi = {

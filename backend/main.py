@@ -15,6 +15,8 @@ from api.predict import router as predict_router
 from api.route import router as route_router
 from api.shipments import router as shipments_router
 from api.websocket import router as ws_router
+from api.external import router as external_router
+from api.history import router as history_router
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -82,6 +84,8 @@ app.include_router(shipments_router)
 app.include_router(predict_router)
 app.include_router(route_router)
 app.include_router(ws_router)
+app.include_router(external_router)
+app.include_router(history_router)
 
 
 # ─── Health & Info ────────────────────────────────────────────────────────────

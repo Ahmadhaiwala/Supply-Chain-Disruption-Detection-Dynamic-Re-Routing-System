@@ -10,17 +10,19 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Clock,
 } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', view: 'dashboard' as const },
-  { icon: Ship, label: 'Shipments', view: 'shipments' as const },
-  { icon: Map, label: 'Live Map', view: 'map' as const },
-  { icon: AlertTriangle, label: 'Alerts', view: 'alerts' as const },
-  { icon: BarChart3, label: 'Analytics', view: 'analytics' as const },
-  { icon: Settings, label: 'Settings', view: 'settings' as const },
+  { icon: LayoutDashboard, label: 'Dashboard',  view: 'dashboard'  as const },
+  { icon: Ship,            label: 'Shipments',  view: 'shipments'  as const },
+  { icon: Map,             label: 'Live Map',   view: 'map'        as const },
+  { icon: AlertTriangle,   label: 'Alerts',     view: 'alerts'     as const },
+  { icon: BarChart3,       label: 'Analytics',  view: 'analytics'  as const },
+  { icon: Clock,           label: 'Replay',     view: 'replay'     as const },
+  { icon: Settings,        label: 'Settings',   view: 'settings'   as const },
 ]
 
 export function Sidebar() {

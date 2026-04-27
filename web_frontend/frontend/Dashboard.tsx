@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { KPICards } from './components/KPICards'
@@ -13,13 +13,16 @@ import { AlertsView } from './components/AlertsView'
 import { AnalyticsView } from './components/AnalyticsView'
 import { ShipmentsView } from './components/ShipmentsView'
 import { SettingsView } from './components/SettingsView'
+import { AdvisorPanel, AdvisorFAB } from './components/AdvisorPanel'
+import { ReplayView } from './components/ReplayView'
+import { ReportModal } from './components/ReportModal'
 import { useDashboardStore } from './store/useStore'
 import { useShipments, useBackendHealth, useShipmentPrediction, useShipmentWebSocket } from '@/hooks/useApi'
 
 function DashboardMain() {
-  const { sidebarCollapsed, selectedShipmentId } = useDashboardStore()
+  const { selectedShipmentId } = useDashboardStore()
 
-  // Fetch prediction whenever a shipment is selected
+  // Fetch prediction + live tracking whenever a shipment is selected
   useShipmentPrediction(selectedShipmentId)
   useShipmentWebSocket(selectedShipmentId)
 
@@ -55,11 +58,16 @@ function DashboardMain() {
 }
 
 export default function Dashboard() {
-  const { sidebarCollapsed, activeView } = useDashboardStore()
+  const { sidebarCollapsed, activeView, shipments, showReportModal, reportInitType, setShowReportModal } = useDashboardStore()
+  const [advisorOpen, setAdvisorOpen] = useState(false)
 
   // Bootstrap: health check + load shipments on mount
   useBackendHealth()
   useShipments()
+
+  const hasHighRiskAlert = shipments.some(
+    (s) => s.riskLevel === 'high' || s.riskLevel === 'critical'
+  )
 
   const contentStyle = {
     marginLeft: sidebarCollapsed ? 72 : 240,
@@ -84,10 +92,22 @@ export default function Dashboard() {
         )}
         {activeView === 'alerts' && <AlertsView />}
         {activeView === 'analytics' && <AnalyticsView />}
+        {activeView === 'replay' && <ReplayView />}
         {activeView === 'settings' && <SettingsView />}
       </div>
 
       <RouteModal />
+
+      {/* Report Modal */}
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        initialType={reportInitType ?? undefined}
+      />
+
+      {/* AI Advisor */}
+      <AdvisorFAB onClick={() => setAdvisorOpen(true)} hasAlert={hasHighRiskAlert} />
+      <AdvisorPanel open={advisorOpen} onClose={() => setAdvisorOpen(false)} />
     </div>
   )
 }

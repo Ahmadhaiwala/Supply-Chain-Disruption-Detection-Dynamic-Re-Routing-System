@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Clock, DollarSign, AlertTriangle, Check, Loader2 } from 'lucide-react'
+import { X, Clock, DollarSign, AlertTriangle, Check, Loader2, Navigation } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { cn } from '@/lib/utils'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
@@ -14,13 +14,14 @@ export function RouteModal() {
     shipments,
     selectedShipmentId,
     shapFeatures,
-    isLoadingRoutes,
   } = useDashboardStore()
 
   const selectedShipment = shipments.find((s) => s.id === selectedShipmentId)
 
-  // Fetch routes from backend when modal opens
-  useShipmentRoutes(showRouteModal ? selectedShipmentId : null)
+  // Single hook call — isFetching is the only loading signal we need
+  const { isFetching, data: routeData, error } = useShipmentRoutes(
+    showRouteModal ? selectedShipmentId : null
+  )
 
   const { mutate: selectRoute, isPending: isSelecting } = useSelectRoute()
 
@@ -29,14 +30,16 @@ export function RouteModal() {
   const handleExecuteRoute = (rank: number) => {
     if (!selectedShipmentId) return
     if (rank === 0) {
-      // Keep current route — just close
       setShowRouteModal(false)
       return
     }
     selectRoute({ bookingId: selectedShipmentId, rank })
   }
 
-  // Build SHAP chart data from real backend values or fallback
+  // Alternatives come from the store (updated by the hook's onSuccess)
+  const alternatives = selectedShipment.alternativeRoutes ?? []
+
+  // SHAP data — real from backend or sensible fallback
   const shapData =
     shapFeatures.length > 0
       ? shapFeatures.map((f) => ({
@@ -45,18 +48,18 @@ export function RouteModal() {
           positive: f.shap_value < 0,
         }))
       : [
-          { feature: 'Weather', impact: 0.35, positive: false },
-          { feature: 'Port Congestion', impact: 0.25, positive: false },
-          { feature: 'Route Distance', impact: 0.15, positive: false },
-          { feature: 'Historical Delays', impact: 0.12, positive: false },
-          { feature: 'Carrier Rating', impact: -0.08, positive: true },
+          { feature: 'Traffic Congestion', impact: 0.38, positive: false },
+          { feature: 'Weather Severity',   impact: 0.28, positive: false },
+          { feature: 'Route Risk Level',   impact: 0.18, positive: false },
+          { feature: 'Driver Fatigue',     impact: 0.10, positive: false },
+          { feature: 'Supplier Reliability', impact: -0.12, positive: true },
+          { feature: 'Cargo Condition',    impact: -0.06, positive: true },
         ]
-
-  const alternatives = selectedShipment.alternativeRoutes ?? []
 
   return (
     <AnimatePresence>
       <>
+        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -65,24 +68,27 @@ export function RouteModal() {
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
         />
 
+        {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-4xl z-50 glass-card p-6 overflow-y-auto max-h-[90vh]"
         >
-          {/* Header */}
+          {/* ── Header ── */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
+                <AlertTriangle className={cn('h-5 w-5', selectedShipment.riskLevel === 'critical' ? 'text-red-300' : 'text-red-400')} />
                 <h2 className="text-xl font-bold text-white">Route Decision Required</h2>
               </div>
               <p className="text-sm text-slate-400">
-                High risk detected for <span className="text-white font-medium">{selectedShipment.id}</span>.
+                {selectedShipment.riskLevel === 'critical' ? '🔴 Critical' : 'High'} risk detected for{' '}
+                <span className="text-white font-medium">{selectedShipment.id}</span>.
                 Review alternative routes below.
               </p>
             </div>
+
             <button
               onClick={() => setShowRouteModal(false)}
               className="p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -91,30 +97,55 @@ export function RouteModal() {
             </button>
           </div>
 
-          {/* Loading state */}
-          {isLoadingRoutes && (
-            <div className="flex items-center justify-center py-12 gap-3">
-              <Loader2 className="h-6 w-6 text-cyan-400 animate-spin" />
-              <span className="text-slate-400">Computing optimal routes...</span>
+          {/* ── Loading ── */}
+          {isFetching && alternatives.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-14 gap-3">
+              <div className="relative">
+                <Navigation className="h-8 w-8 text-cyan-400" />
+                <Loader2 className="h-14 w-14 text-cyan-500/30 animate-spin absolute -inset-3" />
+              </div>
+              <p className="text-slate-300 font-medium">Computing optimal routes...</p>
+              <p className="text-xs text-slate-500">Running A* on USA road network graph</p>
             </div>
           )}
 
-          {/* Route cards */}
-          {!isLoadingRoutes && (
+          {/* ── Error ── */}
+          {error && (
+            <div className="flex items-center gap-3 p-4 mb-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+              <p className="text-sm text-red-300">
+                Failed to compute routes. Showing cached data if available.
+              </p>
+            </div>
+          )}
+
+          {/* ── Route cards ── */}
+          {(!isFetching || alternatives.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
               {/* Current route */}
-              <div className="glass-inner p-4 border-2 border-red-500/50">
+              <div className={cn(
+                'glass-inner p-4 border-2',
+                selectedShipment.riskLevel === 'critical' ? 'border-red-600/70' : 'border-red-500/50'
+              )}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
                     Current Route
                   </span>
-                  <span className="px-2 py-0.5 text-xs font-medium uppercase text-red-400 bg-red-500/20 rounded-full">
-                    High Risk
+                  <span className={cn(
+                    'px-2 py-0.5 text-xs font-bold uppercase rounded-full',
+                    selectedShipment.riskLevel === 'critical'
+                      ? 'text-red-300 bg-red-600/30 ring-1 ring-red-500/50'
+                      : selectedShipment.riskLevel === 'high'
+                      ? 'text-red-400 bg-red-500/20'
+                      : 'text-amber-400 bg-amber-500/20'
+                  )}>
+                    {selectedShipment.riskLevel === 'critical' ? '🔴 Critical' : 'High Risk'}
                   </span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
-                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <AlertTriangle className={cn('h-4 w-4', selectedShipment.riskLevel === 'critical' ? 'text-red-300' : 'text-red-400')} />
                     <span className="text-white">Risk: {selectedShipment.riskScore}%</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -134,79 +165,96 @@ export function RouteModal() {
                 </button>
               </div>
 
+
               {/* Alternative routes */}
-              {alternatives.slice(0, 2).map((route, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    'glass-inner p-4 border-2 transition-colors',
-                    route.isRecommended
-                      ? 'border-cyan-500/80'
-                      : 'border-cyan-500/50 hover:border-cyan-500/80',
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                      {route.label ?? `Alternative ${idx + 1}`}
-                    </span>
-                    <span
+              {alternatives.length > 0
+                ? alternatives.slice(0, 2).map((route, idx) => (
+                    <div
+                      key={idx}
                       className={cn(
-                        'px-2 py-0.5 text-xs font-medium uppercase rounded-full',
-                        route.riskScore < 50
-                          ? 'text-emerald-400 bg-emerald-500/20'
-                          : 'text-amber-400 bg-amber-500/20',
+                        'glass-inner p-4 border-2 transition-colors',
+                        route.isRecommended
+                          ? 'border-cyan-500/80 shadow-[0_0_20px_rgba(6,182,212,0.15)]'
+                          : 'border-cyan-500/40 hover:border-cyan-500/70',
                       )}
                     >
-                      {route.isRecommended ? '★ Recommended' : route.riskScore < 50 ? 'Lower Risk' : 'Moderate'}
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <AlertTriangle
-                        className={cn(
-                          'h-4 w-4',
-                          route.riskScore < 50 ? 'text-emerald-400' : 'text-amber-400',
-                        )}
-                      />
-                      <span className="text-white">Risk: {route.riskScore}%</span>
-                      <span className="text-emerald-400 text-xs">
-                        (-{selectedShipment.riskScore - route.riskScore}%)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <DollarSign className="h-4 w-4" />
-                      <span>+₹{route.costDelta.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <Clock className="h-4 w-4" />
-                      <span>{route.etaDelta}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleExecuteRoute(route.rank ?? idx + 1)}
-                    disabled={isSelecting}
-                    className="w-full mt-4 px-4 py-2 text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isSelecting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    Execute Route
-                  </button>
-                </div>
-              ))}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-medium uppercase tracking-wider text-slate-400 truncate pr-1">
+                          {route.label ?? `Alternative ${idx + 1}`}
+                        </span>
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 text-xs font-medium uppercase rounded-full flex-shrink-0',
+                            route.isRecommended
+                              ? 'text-cyan-400 bg-cyan-500/20'
+                              : route.riskScore < 50
+                                ? 'text-emerald-400 bg-emerald-500/20'
+                                : 'text-amber-400 bg-amber-500/20',
+                          )}
+                        >
+                          {route.isRecommended ? '★ Best' : route.riskScore < 50 ? 'Lower Risk' : 'Moderate'}
+                        </span>
+                      </div>
 
-              {/* Placeholder if no alternatives yet */}
-              {alternatives.length === 0 && !isLoadingRoutes && (
-                <div className="glass-inner p-4 border-2 border-white/10 flex items-center justify-center col-span-2">
-                  <p className="text-sm text-slate-500">No alternative routes available</p>
-                </div>
-              )}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2 text-sm">
+                          <AlertTriangle
+                            className={cn(
+                              'h-4 w-4 flex-shrink-0',
+                              route.riskScore < 50 ? 'text-emerald-400' : 'text-amber-400',
+                            )}
+                          />
+                          <span className="text-white">Risk: {route.riskScore}%</span>
+                          {selectedShipment.riskScore > route.riskScore && (
+                            <span className="text-emerald-400 text-xs">
+                              ↓{selectedShipment.riskScore - route.riskScore}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <DollarSign className="h-4 w-4 flex-shrink-0" />
+                          <span>
+                            {route.costDelta > 0
+                              ? `+$${route.costDelta.toLocaleString()}`
+                              : 'Same cost'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <Clock className="h-4 w-4 flex-shrink-0" />
+                          <span>{route.etaDelta}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleExecuteRoute(route.rank ?? idx + 2)}
+                        disabled={isSelecting}
+                        className="w-full mt-4 px-4 py-2 text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isSelecting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        Execute Route
+                      </button>
+                    </div>
+                  ))
+                : /* Still loading or no data — show skeleton cards */
+                  [1, 2].map((n) => (
+                    <div key={n} className="glass-inner p-4 border-2 border-white/10 animate-pulse">
+                      <div className="h-3 w-24 bg-white/10 rounded mb-4" />
+                      <div className="space-y-3">
+                        <div className="h-3 w-full bg-white/10 rounded" />
+                        <div className="h-3 w-3/4 bg-white/10 rounded" />
+                        <div className="h-3 w-1/2 bg-white/10 rounded" />
+                      </div>
+                      <div className="h-9 w-full bg-white/10 rounded-lg mt-4" />
+                    </div>
+                  ))}
             </div>
           )}
 
-          {/* SHAP explanation */}
+          {/* ── SHAP explanation ── */}
           <div className="glass-inner p-4">
             <h3 className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-4">
               Risk Factor Analysis (SHAP Explanation)
@@ -216,7 +264,7 @@ export function RouteModal() {
                 <BarChart
                   data={shapData}
                   layout="vertical"
-                  margin={{ top: 0, right: 20, bottom: 0, left: 120 }}
+                  margin={{ top: 0, right: 20, bottom: 0, left: 130 }}
                 >
                   <XAxis
                     type="number"
@@ -231,7 +279,7 @@ export function RouteModal() {
                     stroke="#64748b"
                     fontSize={11}
                     tickLine={false}
-                    width={115}
+                    width={125}
                   />
                   <Bar dataKey="impact" radius={[0, 4, 4, 0]}>
                     {shapData.map((entry, index) => (
@@ -241,7 +289,7 @@ export function RouteModal() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex items-center justify-center gap-6 mt-4 text-xs">
+            <div className="flex items-center justify-center gap-6 mt-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded bg-red-500" />
                 <span className="text-slate-400">Increases Risk</span>

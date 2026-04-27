@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { FileText } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell,
@@ -8,7 +9,7 @@ import {
 } from 'recharts'
 
 export function AnalyticsView() {
-  const { shipments, kpis } = useDashboardStore()
+  const { shipments, kpis, setShowReportModal } = useDashboardStore()
 
   // Risk distribution
   const riskDist = [
@@ -44,11 +45,22 @@ export function AnalyticsView() {
 
   return (
     <main className="pt-20 pb-6 px-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Analytics</h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Performance metrics across {shipments.length} tracked shipments
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Analytics</h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Performance metrics across {shipments.length} tracked shipments
+          </p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowReportModal(true, 'OPERATIONS')}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
+        >
+          <FileText className="h-4 w-4" />
+          Export Operations Report
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-12 gap-6">

@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Package, Ship, Droplets, Thermometer, ArrowRight, RefreshCw, Plus, Loader2 } from 'lucide-react'
+import { Package, Ship, Droplets, Thermometer, ArrowRight, RefreshCw, Plus, Loader2, FileText, Download } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { useShipments } from '@/hooks/useApi'
 import { cn } from '@/lib/utils'
 import type { RiskLevel } from '../store/useStore'
+import { AddShipmentDrawer } from './AddShipmentDrawer'
 
 const riskColors: Record<RiskLevel, { bg: string; text: string; border: string }> = {
   low: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
@@ -23,11 +24,12 @@ const cargoIcons = {
 }
 
 export function ShipmentsView() {
-  const { shipments, isLoadingShipments, setSelectedShipment, setShowRouteModal, setActiveView } =
+  const { shipments, isLoadingShipments, setSelectedShipment, setShowRouteModal, setActiveView, setShowReportModal } =
     useDashboardStore()
   const { refetch } = useShipments()
   const [filter, setFilter] = useState<'all' | 'LOW' | 'MEDIUM' | 'HIGH'>('all')
   const [search, setSearch] = useState('')
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const filtered = shipments.filter((s) => {
     const matchFilter =
@@ -51,25 +53,48 @@ export function ShipmentsView() {
     }
   }
 
+  const handleExportShipment = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    setSelectedShipment(id)
+    setShowReportModal(true, 'SHIPMENT_JOURNEY')
+  }
+
   return (
-    <main className="pt-20 pb-6 px-6">
+    <>
+      <main className="pt-20 pb-6 px-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Shipments</h2>
           <p className="text-sm text-slate-400 mt-1">{shipments.length} total shipments tracked</p>
         </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isLoadingShipments}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
-        >
-          {isLoadingShipments ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          Refresh
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => refetch()}
+            disabled={isLoadingShipments}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            {isLoadingShipments ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Refresh
+          </button>
+          <button
+            onClick={() => setShowReportModal(true, 'OPERATIONS')}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
+          >
+            <FileText className="h-4 w-4" />
+            Export Report
+          </button>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-cyan-500/20 border border-cyan-500/40 rounded-lg hover:bg-cyan-500/30 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Add Shipment
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -108,7 +133,7 @@ export function ShipmentsView() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/10">
-                {['Booking ID', 'Cargo', 'Origin → Destination', 'Distance', 'ETA', 'Risk', 'Status', ''].map(
+                {['Booking ID', 'Cargo', 'Origin → Destination', 'Distance', 'ETA', 'Risk', 'Status', 'Report', ''].map(
                   (h) => (
                     <th
                       key={h}
@@ -180,6 +205,15 @@ export function ShipmentsView() {
                     </td>
                     <td className="px-4 py-3">
                       <button
+                        onClick={(e) => handleExportShipment(e, s.id)}
+                        title="Export Shipment Report"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSelect(s.id)
@@ -204,5 +238,7 @@ export function ShipmentsView() {
         </div>
       )}
     </main>
+    <AddShipmentDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
   )
 }
