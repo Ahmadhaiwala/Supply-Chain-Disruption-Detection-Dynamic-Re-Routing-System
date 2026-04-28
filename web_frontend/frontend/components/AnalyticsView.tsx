@@ -63,13 +63,9 @@ export function AnalyticsView() {
         </motion.button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {/* Risk Distribution Pie */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-4 glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Distribution
           </h3>
@@ -108,12 +104,7 @@ export function AnalyticsView() {
         </motion.div>
 
         {/* Cargo Type Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-4 glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Shipments by Cargo Type
           </h3>
@@ -133,12 +124,7 @@ export function AnalyticsView() {
         </motion.div>
 
         {/* Risk Score Histogram */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-4 glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Score Distribution
           </h3>
@@ -163,12 +149,7 @@ export function AnalyticsView() {
         </motion.div>
 
         {/* 7-day trend */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-8 glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="sm:col-span-2 xl:col-span-2 glass-card p-5">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             7-Day Trend — High Risk & Delays
           </h3>
@@ -192,12 +173,7 @@ export function AnalyticsView() {
         </motion.div>
 
         {/* KPI summary */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-4 glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-5">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Summary
           </h3>

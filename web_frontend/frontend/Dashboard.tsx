@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { KPICards } from './components/KPICards'
@@ -18,38 +18,45 @@ import { ReplayView } from './components/ReplayView'
 import { ReportModal } from './components/ReportModal'
 import { useDashboardStore } from './store/useStore'
 import { useShipments, useBackendHealth, useShipmentPrediction, useShipmentWebSocket } from '@/hooks/useApi'
+import { cn } from '@/lib/utils'
 
 function DashboardMain() {
   const { selectedShipmentId } = useDashboardStore()
-
-  // Fetch prediction + live tracking whenever a shipment is selected
   useShipmentPrediction(selectedShipmentId)
   useShipmentWebSocket(selectedShipmentId)
 
   return (
-    <main className="pt-20 pb-6 px-4 md:px-6">
-      <section className="mb-6">
+    <main className="pt-16 pb-6 px-3 sm:px-4 md:px-6">
+      {/* KPI Cards */}
+      <section className="mb-4 md:mb-6 pt-4">
         <KPICards />
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-6">
-        <div className="lg:col-span-3 order-2 lg:order-1">
-          <div className="h-[400px] md:h-[500px]">
-            <ShipmentsList />
-          </div>
-        </div>
-        <div className="lg:col-span-6 order-1 lg:order-2">
-          <div className="h-[400px] md:h-[500px]">
+      {/* Main grid — stacks on mobile, side-by-side on desktop */}
+      <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-12 md:gap-6 mb-4 md:mb-6">
+        {/* Map — full width on mobile, center on desktop */}
+        <div className="md:col-span-6 md:order-2">
+          <div className="h-[280px] sm:h-[360px] md:h-[500px]">
             <LiveMap />
           </div>
         </div>
-        <div className="lg:col-span-3 order-3">
-          <div className="h-[400px] md:h-[500px]">
+
+        {/* Shipments list — below map on mobile */}
+        <div className="md:col-span-3 md:order-1">
+          <div className="h-[320px] md:h-[500px]">
+            <ShipmentsList />
+          </div>
+        </div>
+
+        {/* Risk gauge — compact row on mobile */}
+        <div className="md:col-span-3 md:order-3">
+          <div className="h-[240px] sm:h-[280px] md:h-[500px]">
             <RiskGauge />
           </div>
         </div>
       </div>
 
+      {/* Alert ticker */}
       <section>
         <AlertTicker />
       </section>
@@ -58,57 +65,52 @@ function DashboardMain() {
 }
 
 export default function Dashboard() {
-  const { sidebarCollapsed, activeView, shipments, showReportModal, reportInitType, setShowReportModal } = useDashboardStore()
+  const {
+    sidebarCollapsed, activeView, shipments,
+    showReportModal, reportInitType, setShowReportModal,
+  } = useDashboardStore()
   const [advisorOpen, setAdvisorOpen] = useState(false)
 
-  // Bootstrap: health check + load shipments on mount
   useBackendHealth()
   useShipments()
 
-  const hasHighRiskAlert = shipments.some(
-    (s) => s.riskLevel === 'high' || s.riskLevel === 'critical'
-  )
-
-  const contentStyle = {
-    marginLeft: sidebarCollapsed ? 72 : 240,
-    transition: 'margin-left 0.3s ease-in-out',
-  }
-
-  const mobileContentStyle = {
-    marginLeft: 0,
-  }
+  const hasHighRiskAlert = shipments.some(s => s.riskLevel === 'high' || s.riskLevel === 'critical')
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <Header />
 
-      <div className="md:transition-[margin] md:duration-300 md:ease-in-out" style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 768 ? (sidebarCollapsed ? 72 : 240) : 0 }}>
-        {activeView === 'dashboard' && <DashboardMain />}
-        {activeView === 'shipments' && <ShipmentsView />}
-        {activeView === 'map' && (
-          <main className="pt-20 pb-6 px-4 md:px-6">
-            <div className="h-[calc(100vh-100px)]">
+      {/* Content — no margin on mobile (sidebar is overlay), margin on md+ */}
+      <div className={cn(
+        'transition-[margin] duration-300 ease-in-out',
+        'ml-0',
+        sidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-[240px]',
+      )}>
+        <Header />
+
+        {activeView === 'dashboard'  && <DashboardMain />}
+        {activeView === 'shipments'  && <ShipmentsView />}
+        {activeView === 'map'        && (
+          <main className="pt-16 pb-6 px-3 sm:px-4 md:px-6">
+            <div className="pt-4 h-[calc(100vh-80px)]">
               <LiveMap />
             </div>
           </main>
         )}
-        {activeView === 'alerts' && <AlertsView />}
-        {activeView === 'analytics' && <AnalyticsView />}
-        {activeView === 'replay' && <ReplayView />}
-        {activeView === 'settings' && <SettingsView />}
+        {activeView === 'alerts'     && <AlertsView />}
+        {activeView === 'analytics'  && <AnalyticsView />}
+        {activeView === 'replay'     && <ReplayView />}
+        {activeView === 'settings'   && <SettingsView />}
       </div>
 
       <RouteModal />
 
-      {/* Report Modal */}
       <ReportModal
         open={showReportModal}
         onClose={() => setShowReportModal(false)}
         initialType={reportInitType ?? undefined}
       />
 
-      {/* AI Advisor */}
       <AdvisorFAB onClick={() => setAdvisorOpen(true)} hasAlert={hasHighRiskAlert} />
       <AdvisorPanel open={advisorOpen} onClose={() => setAdvisorOpen(false)} />
     </div>
