@@ -32,19 +32,19 @@ function DashboardMain() {
         <KPICards />
       </section>
 
-      <div className="grid grid-cols-12 gap-6 mb-6">
-        <div className="col-span-3">
-          <div className="h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-6">
+        <div className="lg:col-span-3 order-2 lg:order-1">
+          <div className="h-[400px] md:h-[500px]">
             <ShipmentsList />
           </div>
         </div>
-        <div className="col-span-6">
-          <div className="h-[500px]">
+        <div className="lg:col-span-6 order-1 lg:order-2">
+          <div className="h-[400px] md:h-[500px]">
             <LiveMap />
           </div>
         </div>
-        <div className="col-span-3">
-          <div className="h-[500px]">
+        <div className="lg:col-span-3 order-3">
+          <div className="h-[400px] md:h-[500px]">
             <RiskGauge />
           </div>
         </div>
@@ -74,17 +74,40 @@ export default function Dashboard() {
     transition: 'margin-left 0.3s ease-in-out',
   }
 
+  const mobileContentStyle = {
+    marginLeft: 0,
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
 
-      <div style={contentStyle}>
+      <div className="md:hidden" style={mobileContentStyle}>
+        <Header />
+      </div>
+      <div className="hidden md:block" style={contentStyle}>
         <Header />
 
         {activeView === 'dashboard' && <DashboardMain />}
         {activeView === 'shipments' && <ShipmentsView />}
         {activeView === 'map' && (
-          <main className="pt-20 pb-6 px-6">
+          <main className="pt-20 pb-6 px-4 md:px-6">
+            <div className="h-[calc(100vh-100px)]">
+              <LiveMap />
+            </div>
+          </main>
+        )}
+        {activeView === 'alerts' && <AlertsView />}
+        {activeView === 'analytics' && <AnalyticsView />}
+        {activeView === 'replay' && <ReplayView />}
+        {activeView === 'settings' && <SettingsView />}
+      </div>
+      {/* Mobile content wrapper end — closing the desktop one */}
+      <div className="md:hidden pt-20 pb-6 px-4">
+        {activeView === 'dashboard' && <DashboardMain />}
+        {activeView === 'shipments' && <ShipmentsView />}
+        {activeView === 'map' && (
+          <main className="pb-6">
             <div className="h-[calc(100vh-100px)]">
               <LiveMap />
             </div>

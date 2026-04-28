@@ -26,15 +26,15 @@ export function AlertsView() {
   }
 
   return (
-    <main className="pt-20 pb-6 px-6">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="pt-20 pb-6 px-4 md:px-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-white">Alerts Center</h2>
           <p className="text-sm text-slate-400 mt-1">
             {alerts.length} total alerts — {grouped.critical.length} critical
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {(['critical', 'warning', 'info'] as const).map((sev) => {
             const cfg = severityConfig[sev]
             return (
@@ -76,7 +76,7 @@ export function AlertsView() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
                   <span className={cn('text-xs font-bold uppercase tracking-wider', cfg.iconColor)}>
                     {cfg.label}
                   </span>
@@ -84,7 +84,7 @@ export function AlertsView() {
                     <span className="text-xs text-slate-500">• {alert.shipmentId}</span>
                   )}
                   {shipment && (
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 truncate">
                       ({shipment.origin} → {shipment.destination})
                     </span>
                   )}
@@ -105,7 +105,7 @@ export function AlertsView() {
                   className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
                 >
                   <Check className="h-3.5 w-3.5" />
-                  Acknowledge
+                  <span className="hidden sm:inline">Acknowledge</span>
                 </button>
               )}
             </motion.div>

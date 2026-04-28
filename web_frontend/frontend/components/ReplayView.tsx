@@ -45,7 +45,7 @@ function SummaryCards({ data }: { data: ReplayShipmentData[] }) {
     { label: 'Avg Early Warning', value: `${s.avgEarlyWarningHours}h`, icon: '⏱', color: 'text-blue-400' },
   ]
   return (
-    <div className="grid grid-cols-5 gap-3 mb-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
       {cards.map(c => (
         <div key={c.label} className="glass-card px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
@@ -464,9 +464,9 @@ export function ReplayView() {
   const allReplayData = Object.values(replayDataMap)
 
   return (
-    <main className="pt-20 pb-4 px-6 h-screen flex flex-col overflow-hidden">
+    <main className="pt-20 pb-4 px-4 md:px-6 h-screen flex flex-col overflow-hidden">
       {/* ── Header ── */}
-      <div className="flex items-center gap-4 mb-4 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 flex-shrink-0">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Clock className="h-5 w-5 text-cyan-400" />
@@ -474,7 +474,7 @@ export function ReplayView() {
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">Scrub through past events · Predictions vs Reality</p>
         </div>
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3 sm:ml-auto">
           <DateRangePicker days={days} onDays={setDays} />
           <ShipmentSelector shipments={shipments} selected={selectedIds} onSelect={setSelectedIds} />
         </div>
@@ -518,10 +518,10 @@ export function ReplayView() {
           {/* ── Detail panel ── */}
           <div className="flex-1 glass-card overflow-hidden flex flex-col min-h-0">
             {/* Tab bar */}
-            <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-white/10 flex-shrink-0">
+            <div className="flex items-center gap-1 px-2 md:px-4 pt-3 pb-0 border-b border-white/10 flex-shrink-0 overflow-x-auto">
               {([['map', 'Map Replay', '🗺'], ['chart', 'Prediction vs Reality', '📈'], ['log', 'Decision Log', '📋']] as const).map(([key, label, icon]) => (
                 <button key={key} onClick={() => setActiveTab(key)}
-                  className={cn('flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px',
+                  className={cn('flex items-center gap-1.5 px-2 md:px-4 py-2.5 text-xs md:text-sm font-medium border-b-2 transition-all -mb-px whitespace-nowrap',
                     activeTab === key ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white')}>
                   <span>{icon}</span>{label}
                 </button>

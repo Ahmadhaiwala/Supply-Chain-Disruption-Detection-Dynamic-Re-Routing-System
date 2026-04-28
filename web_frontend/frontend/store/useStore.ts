@@ -54,6 +54,7 @@ export type ReportInitType = 'SHIPMENT_JOURNEY' | 'OPERATIONS' | 'INCIDENT' | nu
 interface DashboardState {
   // UI State
   sidebarCollapsed: boolean
+  mobileSidebarOpen: boolean
   selectedShipmentId: string | null
   showRouteModal: boolean
   showReportModal: boolean
@@ -83,6 +84,7 @@ interface DashboardState {
 
   // Actions — UI
   toggleSidebar: () => void
+  setMobileSidebarOpen: (open: boolean) => void
   setSelectedShipment: (id: string | null) => void
   setShowRouteModal: (show: boolean) => void
   setShowReportModal: (show: boolean, initType?: ReportInitType) => void
@@ -107,6 +109,7 @@ interface DashboardState {
 export const useDashboardStore = create<DashboardState>((set) => ({
   // Initial UI State
   sidebarCollapsed: false,
+  mobileSidebarOpen: false,
   selectedShipmentId: null,
   showRouteModal: false,
   showReportModal: false,
@@ -142,6 +145,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
 
   // UI Actions
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
   setSelectedShipment: (id) => set({ selectedShipmentId: id }),
   setShowRouteModal: (show) => set({ showRouteModal: show }),
   setShowReportModal: (show, initType = null) => set({ showReportModal: show, reportInitType: show ? initType : null }),

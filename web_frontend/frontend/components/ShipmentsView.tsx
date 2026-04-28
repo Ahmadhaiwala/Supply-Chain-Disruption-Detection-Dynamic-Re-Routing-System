@@ -61,13 +61,13 @@ export function ShipmentsView() {
 
   return (
     <>
-      <main className="pt-20 pb-6 px-6">
-      <div className="mb-6 flex items-center justify-between">
+      <main className="pt-20 pb-6 px-4 md:px-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-white">Shipments</h2>
           <p className="text-sm text-slate-400 mt-1">{shipments.length} total shipments tracked</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={() => refetch()}
             disabled={isLoadingShipments}
@@ -98,15 +98,15 @@ export function ShipmentsView() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by ID, origin, destination..."
-          className="flex-1 max-w-sm px-4 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all"
+          className="flex-1 sm:max-w-sm px-4 py-2 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all"
         />
-        <div className="flex gap-1 p-1 bg-black/40 rounded-lg">
+        <div className="flex gap-1 p-1 bg-black/40 rounded-lg self-start">
           {(['all', 'LOW', 'MEDIUM', 'HIGH'] as const).map((f) => (
             <button
               key={f}
@@ -129,8 +129,8 @@ export function ShipmentsView() {
           <span className="text-slate-400">Loading shipments...</span>
         </div>
       ) : (
-        <div className="glass-card overflow-hidden">
-          <table className="w-full">
+        <div className="glass-card overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-white/10">
                 {['Booking ID', 'Cargo', 'Origin → Destination', 'Distance', 'ETA', 'Risk', 'Status', 'Report', ''].map(

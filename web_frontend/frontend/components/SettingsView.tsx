@@ -20,7 +20,7 @@ export function SettingsView() {
   }
 
   return (
-    <main className="pt-20 pb-6 px-6 max-w-2xl">
+    <main className="pt-20 pb-6 px-4 md:px-6 max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-white">Settings</h2>
         <p className="text-sm text-slate-400 mt-1">Configure backend connection and risk thresholds</p>

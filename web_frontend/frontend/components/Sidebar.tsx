@@ -11,6 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Menu,
+  X,
 } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { cn } from '@/lib/utils'
@@ -26,23 +28,33 @@ const navItems = [
 ]
 
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, backendOnline } = useDashboardStore()
+  const { sidebarCollapsed, toggleSidebar, mobileSidebarOpen, setMobileSidebarOpen, activeView, setActiveView, backendOnline } = useDashboardStore()
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: sidebarCollapsed ? 72 : 240 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 z-40 h-screen glass-card border-r border-white/10"
-    >
-      <div className="flex h-full flex-col">
+    <>
+      {/* Mobile backdrop */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      <motion.aside
+        initial={false}
+        className={cn(
+          'fixed top-0 z-40 h-screen glass-card border-r border-white/10',
+          'transition-all duration-300 ease-in-out',
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'md:translate-x-0',
+          sidebarCollapsed ? 'md:w-[72px]' : 'md:w-[240px]',
+          'w-[260px]',
+        )}
+      >
+        <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
-          <motion.div
-            initial={false}
-            animate={{ opacity: sidebarCollapsed ? 0 : 1 }}
-            className="flex items-center gap-2"
-          >
+          <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
               <svg width="28" height="28" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
                 {/* Route lines */}
@@ -65,16 +77,26 @@ export function Sidebar() {
                 <circle cx="104" cy="100" r="6" fill="#0e7490"/>
               </svg>
             </div>
-            {!sidebarCollapsed && (
-              <span className="font-bold text-lg tracking-tight text-white">NEXUS</span>
-            )}
-          </motion.div>
-          <button
-            onClick={toggleSidebar}
-            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+            <span className={cn('font-bold text-lg tracking-tight text-white transition-opacity duration-300', sidebarCollapsed ? 'md:opacity-0 md:w-0 md:overflow-hidden' : 'opacity-100')}>
+              NEXUS
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            {/* Desktop collapse toggle */}
+            <button
+              onClick={toggleSidebar}
+              className="hidden md:flex p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+            {/* Mobile close button */}
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="md:hidden p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -99,9 +121,9 @@ export function Sidebar() {
                         isActive && 'drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]',
                       )}
                     />
-                    {!sidebarCollapsed && (
-                      <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-                    )}
+                    <span className={cn('text-sm font-medium whitespace-nowrap transition-all duration-300', sidebarCollapsed ? 'md:opacity-0 md:w-0 md:overflow-hidden hidden md:block' : 'block')}>
+                      {item.label}
+                    </span>
                   </button>
                 </li>
               )
@@ -118,14 +140,13 @@ export function Sidebar() {
                 backendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500',
               )}
             />
-            {!sidebarCollapsed && (
-              <span className="text-xs text-slate-400">
-                {backendOnline ? 'System Online' : 'Backend Offline'}
-              </span>
-            )}
+            <span className={cn('text-xs text-slate-400 transition-all duration-300', sidebarCollapsed ? 'md:opacity-0 md:w-0 md:overflow-hidden hidden md:block' : 'block')}>
+              {backendOnline ? 'System Online' : 'Backend Offline'}
+            </span>
           </div>
         </div>
       </div>
     </motion.aside>
+    </>
   )
 }

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, Search, User, X, Plus, FileText } from 'lucide-react'
+import { Bell, Search, User, X, Plus, FileText, Menu } from 'lucide-react'
 import { useDashboardStore } from '../store/useStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { AddShipmentDrawer } from './AddShipmentDrawer'
 
 export function Header() {
-  const { sidebarCollapsed, alerts, shipments, setSelectedShipment, setShowRouteModal, setActiveView, setShowReportModal } =
+  const { sidebarCollapsed, setMobileSidebarOpen, alerts, shipments, setSelectedShipment, setShowRouteModal, setActiveView, setShowReportModal } =
     useDashboardStore()
   const criticalAlerts = alerts.filter((a) => a.severity === 'critical').length
 
@@ -39,22 +39,29 @@ export function Header() {
   return (
     <>
       <header
-        className="fixed top-0 right-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-6"
+        className="fixed top-0 right-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-4 md:px-6"
       style={{
         left: sidebarCollapsed ? 72 : 240,
         transition: 'left 0.3s ease-in-out',
       }}
     >
-      {/* Left — Title */}
-      <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold tracking-tight text-white">Supply Chain Command Center</h1>
-        <span className="px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-cyan-400 bg-cyan-400/10 rounded-full border border-cyan-400/20">
+      {/* Left — Hamburger + Title */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <h1 className="text-base md:text-lg font-bold tracking-tight text-white truncate">Supply Chain Command Center</h1>
+        <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-cyan-400 bg-cyan-400/10 rounded-full border border-cyan-400/20">
           Live
         </span>
       </div>
 
-      {/* Center — Search */}
-      <div className="flex-1 max-w-md mx-8 relative">
+      {/* Center — Search (hidden on mobile) */}
+      <div className="hidden md:block flex-1 max-w-md mx-8 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 z-10" />
         <input
           type="text"
@@ -111,16 +118,16 @@ export function Header() {
       </div>
 
       {/* Right — Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* Quick add shipment */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setDrawerOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/20 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add Shipment
+          <span className="hidden sm:inline">Add Shipment</span>
         </motion.button>
 
         {/* Export Report */}
@@ -128,7 +135,7 @@ export function Header() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowReportModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
         >
           <FileText className="h-3.5 w-3.5" />
           Export
@@ -151,7 +158,7 @@ export function Header() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setActiveView('settings')}
-          className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 transition-colors"
+          className="hidden sm:flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 transition-colors"
         >
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
             <User className="h-4 w-4 text-white" />

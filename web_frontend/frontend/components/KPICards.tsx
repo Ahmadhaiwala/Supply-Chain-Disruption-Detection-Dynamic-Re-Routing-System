@@ -54,7 +54,7 @@ export function KPICards() {
   const { kpis, isLoadingShipments } = useDashboardStore()
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
       {kpiConfig.map((config, index) => {
         const value = kpis[config.key as keyof typeof kpis] as number
         const trend = kpis[config.trendKey as keyof typeof kpis] as number

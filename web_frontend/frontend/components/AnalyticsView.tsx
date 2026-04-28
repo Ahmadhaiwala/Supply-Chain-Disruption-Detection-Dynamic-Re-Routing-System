@@ -44,8 +44,8 @@ export function AnalyticsView() {
   })
 
   return (
-    <main className="pt-20 pb-6 px-6">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="pt-20 pb-6 px-4 md:px-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-white">Analytics</h2>
           <p className="text-sm text-slate-400 mt-1">
@@ -63,12 +63,12 @@ export function AnalyticsView() {
         </motion.button>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
         {/* Risk Distribution Pie */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="col-span-4 glass-card p-5"
+          className="lg:col-span-4 glass-card p-5"
         >
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Distribution
@@ -112,7 +112,7 @@ export function AnalyticsView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="col-span-4 glass-card p-5"
+          className="lg:col-span-4 glass-card p-5"
         >
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Shipments by Cargo Type
@@ -137,7 +137,7 @@ export function AnalyticsView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="col-span-4 glass-card p-5"
+          className="lg:col-span-4 glass-card p-5"
         >
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Score Distribution
@@ -167,7 +167,7 @@ export function AnalyticsView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="col-span-8 glass-card p-5"
+          className="lg:col-span-8 glass-card p-5"
         >
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             7-Day Trend — High Risk & Delays
@@ -196,7 +196,7 @@ export function AnalyticsView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="col-span-4 glass-card p-5"
+          className="lg:col-span-4 glass-card p-5"
         >
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Summary
