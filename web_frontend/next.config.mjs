@@ -24,7 +24,7 @@ const securityHeaders = [
       // Styles: self + inline (needed for Tailwind/CSS-in-JS) + unpkg for Leaflet
       "style-src 'self' 'unsafe-inline' https://unpkg.com",
       // Images: self + data URIs (for map tiles/icons) + tile servers
-      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.tomtom.com",
+      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.tomtom.com https://*.basemaps.cartocdn.com https://server.arcgisonline.com",
       // Fonts from self (next/font self-hosts them)
       "font-src 'self'",
       // API calls: your Render backend + external APIs
