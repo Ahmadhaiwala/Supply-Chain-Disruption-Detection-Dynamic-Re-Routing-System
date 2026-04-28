@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
+    logger.info("CORS allowed origins: %s", settings.get_allowed_origins())
 
     # Ensure directories exist
     os.makedirs(settings.MODEL_DIR, exist_ok=True)
