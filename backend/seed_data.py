@@ -253,7 +253,7 @@ async def seed():
     for s in shipments_created:
         status = "DELAYED" if s["is_delayed"] else "IN_TRANSIT"
         print(f"  {s['booking_id']:<28} {s['risk_level']:<8} {status:<12} "
-              f"{s['origin'].replace('_',' '):<18} → {s['dest'].replace('_',' ')}")
+              f"{s['origin'].replace('_',' '):<18} -> {s['dest'].replace('_',' ')}")
     print(f"\nTotal: {len(shipments_created)} shipments, {alerts_added} alerts")
     print("=" * 70)
 

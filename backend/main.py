@@ -6,6 +6,7 @@ import logging
 import os
 import traceback
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,8 +53,6 @@ async def lifespan(app: FastAPI):
     from ml.eta_regressor import get_eta_regressor
     from ml.anomaly_detector import get_anomaly_detector
     from routing.graph_router import get_graph
-    from config import settings
-    from pathlib import Path
 
     clf = get_delay_classifier()
     reg = get_eta_regressor()
