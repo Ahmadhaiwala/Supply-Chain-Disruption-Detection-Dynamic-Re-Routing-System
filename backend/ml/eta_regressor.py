@@ -51,15 +51,25 @@ class ETARegressor:
 
     def _load(self):
         if MODEL_PATH_MEDIAN.exists():
-            self.model_median = joblib.load(MODEL_PATH_MEDIAN)
-            self.model_lower = joblib.load(MODEL_PATH_LOWER)
-            self.model_upper = joblib.load(MODEL_PATH_UPPER)
-            logger.info("ETARegressor loaded from saved models")
-        else:
-            logger.warning("No saved ETARegressor found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH_MEDIAN)
-            self.model_median = None
-            self.model_lower = None
-            self.model_upper = None
+            try:
+                self.model_median = joblib.load(MODEL_PATH_MEDIAN)
+                self.model_lower = joblib.load(MODEL_PATH_LOWER)
+                self.model_upper = joblib.load(MODEL_PATH_UPPER)
+                # Validate models work
+                dummy = np.zeros((1, self.model_median.n_features_in_), dtype=np.float32)
+                self.model_median.predict(dummy)
+                logger.info("ETARegressor loaded from saved models")
+                return
+            except Exception as e:
+                logger.warning("Failed to load ETARegressor: %s", e)
+                self.model_median = None
+                self.model_lower = None
+                self.model_upper = None
+
+        logger.warning("No usable ETARegressor found — model will return defaults. Train or deploy model file.")
+        self.model_median = None
+        self.model_lower = None
+        self.model_upper = None
 
     def train(self, X: np.ndarray, y_minutes: np.ndarray) -> dict:
         """
@@ -100,11 +110,15 @@ class ETARegressor:
         if self.model_median is None:
             return None, None, None
 
-        x = feature_vector.reshape(1, -1)
-        median = float(self.model_median.predict(x)[0])
-        lower = float(self.model_lower.predict(x)[0])
-        upper = float(self.model_upper.predict(x)[0])
-        return round(median, 1), round(lower, 1), round(upper, 1)
+        try:
+            x = feature_vector.reshape(1, -1)
+            median = float(self.model_median.predict(x)[0])
+            lower = float(self.model_lower.predict(x)[0])
+            upper = float(self.model_upper.predict(x)[0])
+            return round(median, 1), round(lower, 1), round(upper, 1)
+        except Exception as e:
+            logger.error("ETA prediction failed: %s. Returning defaults.", e)
+            return None, None, None
 
     def _save(self):
         settings.MODEL_DIR.mkdir(parents=True, exist_ok=True)

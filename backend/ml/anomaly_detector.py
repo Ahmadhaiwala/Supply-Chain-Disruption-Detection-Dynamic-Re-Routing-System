@@ -42,13 +42,23 @@ class AnomalyDetector:
 
     def _load(self):
         if MODEL_PATH.exists() and SCALER_PATH.exists():
-            self.model = joblib.load(MODEL_PATH)
-            self.scaler = joblib.load(SCALER_PATH)
-            logger.info("AnomalyDetector loaded from saved models")
-        else:
-            logger.warning("No saved AnomalyDetector found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH)
-            self.model = None
-            self.scaler = None
+            try:
+                self.model = joblib.load(MODEL_PATH)
+                self.scaler = joblib.load(SCALER_PATH)
+                # Validate model works
+                dummy = np.zeros((1, self.scaler.n_features_in_), dtype=np.float32)
+                self.scaler.transform(dummy)
+                self.model.score_samples(self.scaler.transform(dummy))
+                logger.info("AnomalyDetector loaded from saved models")
+                return
+            except Exception as e:
+                logger.warning("Failed to load AnomalyDetector: %s", e)
+                self.model = None
+                self.scaler = None
+
+        logger.warning("No usable AnomalyDetector found — model will return defaults. Train or deploy model file.")
+        self.model = None
+        self.scaler = None
 
     def train(self, X_trajectory: np.ndarray) -> dict:
         """

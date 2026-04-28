@@ -17,7 +17,8 @@ from ml.feature_engineering import FEATURE_COLUMNS
 
 logger = logging.getLogger(__name__)
 
-MODEL_PATH = settings.MODEL_DIR / "xgb_delay_classifier.joblib"
+MODEL_PATH = settings.MODEL_DIR / "xgb_delay_classifier.json"
+MODEL_PATH_JOBLIB = settings.MODEL_DIR / "xgb_delay_classifier.joblib"
 
 
 class DelayClassifier:
@@ -28,12 +29,37 @@ class DelayClassifier:
         self._load()
 
     def _load(self):
+        # Try native XGBoost JSON format first (portable across versions)
         if MODEL_PATH.exists():
-            self.model = joblib.load(MODEL_PATH)
-            logger.info("DelayClassifier loaded from %s", MODEL_PATH)
-        else:
-            logger.warning("No saved DelayClassifier found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH)
-            self.model = None
+            try:
+                self.model = self._build_model()
+                self.model.load_model(str(MODEL_PATH))
+                # Validate the model actually works
+                dummy = np.zeros((1, len(FEATURE_COLUMNS)), dtype=np.float32)
+                self.model.predict_proba(dummy)
+                logger.info("DelayClassifier loaded from native format %s", MODEL_PATH)
+                return
+            except Exception as e:
+                logger.warning("Failed to load native model from %s: %s", MODEL_PATH, e)
+                self.model = None
+
+        # Fallback: try joblib (legacy format, version-sensitive)
+        if MODEL_PATH_JOBLIB.exists():
+            try:
+                self.model = joblib.load(MODEL_PATH_JOBLIB)
+                # Validate the loaded model works
+                dummy = np.zeros((1, len(FEATURE_COLUMNS)), dtype=np.float32)
+                self.model.predict_proba(dummy)
+                logger.info("DelayClassifier loaded from joblib %s", MODEL_PATH_JOBLIB)
+                # Re-save in native format for next load
+                self._save()
+                return
+            except Exception as e:
+                logger.warning("Failed to load joblib model from %s: %s", MODEL_PATH_JOBLIB, e)
+                self.model = None
+
+        logger.warning("No usable DelayClassifier found — model will return defaults. Train or deploy model file.")
+        self.model = None
 
     def _build_model(self) -> xgb.XGBClassifier:
         return xgb.XGBClassifier(
@@ -97,8 +123,12 @@ class DelayClassifier:
             logger.error("Model not trained. Returning default 0.5")
             return 0.5
 
-        x = feature_vector.reshape(1, -1)
-        return float(self.model.predict_proba(x)[0, 1])
+        try:
+            x = feature_vector.reshape(1, -1)
+            return float(self.model.predict_proba(x)[0, 1])
+        except Exception as e:
+            logger.error("Prediction failed: %s. Returning default 0.5", e)
+            return 0.5
 
     def get_shap_values(self, feature_vector: np.ndarray) -> List[dict]:
         """Returns top-5 SHAP feature contributions."""
@@ -119,7 +149,8 @@ class DelayClassifier:
 
     def _save(self):
         settings.MODEL_DIR.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.model, MODEL_PATH)
+        # Use XGBoost native JSON format (portable across library versions)
+        self.model.save_model(str(MODEL_PATH))
         logger.info("DelayClassifier saved to %s", MODEL_PATH)
 
 
