@@ -308,7 +308,7 @@ function ShipmentSelector({ shipments, selected, onSelect }: {
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-2 glass-inner border border-white/10 rounded-lg text-sm text-white hover:border-white/20 transition-colors min-w-[200px]">
+        className="flex items-center gap-2 px-3 py-2 glass-inner border border-white/10 rounded-lg text-sm text-white hover:border-white/20 transition-colors">
         <span className="flex-1 text-left truncate">
           {selected.length === 0 ? 'Select shipments...' : selected.join(', ')}
         </span>
@@ -474,7 +474,7 @@ export function ReplayView() {
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">Scrub through past events · Predictions vs Reality</p>
         </div>
-        <div className="flex items-center gap-3 sm:ml-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:ml-auto">
           <DateRangePicker days={days} onDays={setDays} />
           <ShipmentSelector shipments={shipments} selected={selectedIds} onSelect={setSelectedIds} />
         </div>

@@ -73,7 +73,7 @@ export function AnalyticsView() {
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Distribution
           </h3>
-          <div className="h-48">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -117,7 +117,7 @@ export function AnalyticsView() {
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Shipments by Cargo Type
           </h3>
-          <div className="h-48">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cargoDist} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
@@ -142,7 +142,7 @@ export function AnalyticsView() {
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             Risk Score Distribution
           </h3>
-          <div className="h-48">
+          <div className="h-40 sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={histogram} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                 <XAxis dataKey="range" stroke="#64748b" fontSize={9} tickLine={false} />
@@ -172,7 +172,7 @@ export function AnalyticsView() {
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">
             7-Day Trend — High Risk & Delays
           </h3>
-          <div className="h-56">
+          <div className="h-48 sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData} margin={{ top: 5, right: 20, bottom: 0, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

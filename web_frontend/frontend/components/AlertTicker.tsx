@@ -79,7 +79,7 @@ export function AlertTicker() {
     <div className="glass-card overflow-hidden">
       <div className="flex items-center">
         {/* Static label */}
-        <div className="flex-shrink-0 px-4 py-3 border-r border-white/10 bg-black/40">
+        <div className="flex-shrink-0 px-3 sm:px-4 py-3 border-r border-white/10 bg-black/40">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
             Live Alerts
           </span>

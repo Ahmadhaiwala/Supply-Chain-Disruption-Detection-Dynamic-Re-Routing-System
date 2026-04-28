@@ -81,33 +81,13 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
+      <Header />
 
-      <div className="md:hidden" style={mobileContentStyle}>
-        <Header />
-      </div>
-      <div className="hidden md:block" style={contentStyle}>
-        <Header />
-
+      <div className="md:transition-[margin] md:duration-300 md:ease-in-out" style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 768 ? (sidebarCollapsed ? 72 : 240) : 0 }}>
         {activeView === 'dashboard' && <DashboardMain />}
         {activeView === 'shipments' && <ShipmentsView />}
         {activeView === 'map' && (
           <main className="pt-20 pb-6 px-4 md:px-6">
-            <div className="h-[calc(100vh-100px)]">
-              <LiveMap />
-            </div>
-          </main>
-        )}
-        {activeView === 'alerts' && <AlertsView />}
-        {activeView === 'analytics' && <AnalyticsView />}
-        {activeView === 'replay' && <ReplayView />}
-        {activeView === 'settings' && <SettingsView />}
-      </div>
-      {/* Mobile content wrapper end — closing the desktop one */}
-      <div className="md:hidden pt-20 pb-6 px-4">
-        {activeView === 'dashboard' && <DashboardMain />}
-        {activeView === 'shipments' && <ShipmentsView />}
-        {activeView === 'map' && (
-          <main className="pb-6">
             <div className="h-[calc(100vh-100px)]">
               <LiveMap />
             </div>

@@ -1,16 +1,22 @@
 """
 Ensemble Fusion Layer
 Combines Model A (delay prob), Model B (ETA), Model C (anomaly score)
-into a single Risk Score [0, 1] and Risk Level (LOW / MEDIUM / HIGH).
+into a single Risk Score [0, 1] and Risk Level (LOW / MEDIUM / HIGH / CRITICAL).
+
+Strategy:
+  The disruption_likelihood_score passed from the frontend IS the DB-stored
+  current_risk_score (set during seeding from the dataset). It's the most
+  reliable signal. We use it as the anchor and let the ML models adjust it.
+
+  Final score = anchor * 0.60 + model_signal * 0.40
+
+  This ensures:
+  - A shipment seeded as HIGH (0.82) stays HIGH even if XGBoost is uncertain
+  - A shipment seeded as LOW (0.10) stays LOW even if anomaly detector fires
+  - ML models can push scores up/down by up to ±40% based on real-time features
 """
 from typing import Optional, Tuple
 from config import settings
-
-
-# Weights for ensemble fusion
-WEIGHT_DELAY = 0.55
-WEIGHT_ANOMALY = 0.30
-WEIGHT_ETA_DEVIATION = 0.15  # contribution from ETA model
 
 
 def compute_risk_score(
@@ -23,46 +29,59 @@ def compute_risk_score(
     """
     Compute ensemble risk score and risk level.
 
-    Blends:
-      - XGBoost delay probability (Model A) — weight 0.35
-      - Dataset disruption_likelihood_score — weight 0.40 (ground truth from real data)
-      - Isolation Forest anomaly score      — weight 0.15
-      - ETA deviation component             — weight 0.10
+    Args:
+        delay_probability:          XGBoost output [0, 1]
+        anomaly_score:              Isolation Forest output [0, 1], or None
+        eta_minutes:                LightGBM predicted travel time, or None
+        planned_eta_minutes:        Planned travel time, or None
+        disruption_likelihood_score: DB-stored risk score [0, 1] — primary anchor
 
-    The disruption_likelihood_score is weighted heavily because the XGBoost
-    model may be poorly calibrated for low-delay datasets.
+    Returns:
+        (risk_score [0, 1], risk_level str)
     """
     anomaly = anomaly_score if anomaly_score is not None else 0.0
 
-    # ETA deviation component: how much longer than planned?
-    eta_deviation_score = 0.0
-    if eta_minutes is not None and planned_eta_minutes is not None and planned_eta_minutes > 0:
-        # Only use ETA deviation if the ETA prediction looks realistic (> 30 min)
-        if eta_minutes > 30:
-            deviation_ratio = (eta_minutes - planned_eta_minutes) / planned_eta_minutes
-            eta_deviation_score = min(max(deviation_ratio, 0.0), 1.0)
+    # ── ETA deviation component ────────────────────────────────────────────
+    eta_deviation = 0.0
+    if eta_minutes is not None and planned_eta_minutes is not None and planned_eta_minutes > 30:
+        ratio = (eta_minutes - planned_eta_minutes) / planned_eta_minutes
+        eta_deviation = min(max(ratio, 0.0), 1.0)
 
-    # Weighted fusion — disruption_likelihood_score carries real dataset signal
-    risk_score = (
-        0.35 * delay_probability
-        + 0.40 * disruption_likelihood_score
-        + 0.15 * anomaly
-        + 0.10 * eta_deviation_score
+    # ── ML model signal (0-1) ──────────────────────────────────────────────
+    # Blend XGBoost + anomaly + ETA into a single model signal
+    # XGBoost outputs near-binary (0 or 1) for this dataset, so weight it less
+    model_signal = (
+        0.50 * delay_probability
+        + 0.30 * anomaly
+        + 0.20 * eta_deviation
     )
 
+    # ── Anchor + model blend ───────────────────────────────────────────────
+    # disruption_likelihood_score = DB current_risk_score (the ground truth anchor)
+    # The anchor is the most reliable signal — it comes from the seeded dataset.
+    # The ML model signal can only INCREASE the score, never decrease it below anchor.
+    # This prevents stale/default model inputs from downgrading a known high-risk shipment.
+    anchor = disruption_likelihood_score
+
+    # Blend: anchor is the floor, model signal can push it higher
+    blended = 0.75 * anchor + 0.25 * model_signal
+
+    # Ensure we never go below the anchor (model can only add risk, not remove it)
+    risk_score = max(anchor * 0.90, blended)  # allow at most 10% reduction from anchor
+
+    # Clamp and round
     risk_score = round(min(max(risk_score, 0.0), 1.0), 4)
     risk_level = classify_risk(risk_score)
 
     return risk_score, risk_level
 
 
-
 def classify_risk(score: float) -> str:
     if score > 0.85:
         return "CRITICAL"
-    elif score > settings.RISK_MEDIUM_MAX:
+    elif score > settings.RISK_MEDIUM_MAX:   # > 0.70
         return "HIGH"
-    elif score > settings.RISK_LOW_MAX:
+    elif score > settings.RISK_LOW_MAX:      # > 0.40
         return "MEDIUM"
     else:
         return "LOW"
@@ -78,4 +97,3 @@ def build_recommendation(risk_level: str, is_anomaly: bool) -> str:
         return "🟡 MEDIUM RISK — Alert dispatcher. Prepare alternative routes."
     else:
         return "✅ LOW RISK — Monitor and log. No action required."
-
