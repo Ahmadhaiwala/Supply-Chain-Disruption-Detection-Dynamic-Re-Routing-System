@@ -41,6 +41,10 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
+    # Auto-seed if empty
+    from seed_data import auto_seed
+    await auto_seed()
+
     # Pre-load ML models (warm up)
     from ml.delay_classifier import get_delay_classifier
     from ml.eta_regressor import get_eta_regressor

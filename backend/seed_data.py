@@ -258,5 +258,26 @@ async def seed():
     print("=" * 70)
 
 
+async def auto_seed():
+    """Seed database only if empty — safe to call on every startup."""
+    from sqlalchemy import select, func
+    from database import AsyncSessionLocal
+    from models.db_models import Shipment
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(func.count()).select_from(Shipment))
+        count = result.scalar()
+        if count and count > 0:
+            logger.info("Database already has %d shipments, skipping auto-seed", count)
+            return
+
+    if not CSV_PATH.exists():
+        logger.warning("Seed CSV not found at %s, skipping auto-seed", CSV_PATH)
+        return
+
+    logger.info("Database is empty, running auto-seed...")
+    await seed()
+
+
 if __name__ == "__main__":
     asyncio.run(seed())
