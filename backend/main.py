@@ -47,15 +47,50 @@ async def lifespan(app: FastAPI):
     from seed_data import auto_seed
     await auto_seed()
 
-    # Pre-load ML models (warm up)
+    # Auto-train models if not saved
     from ml.delay_classifier import get_delay_classifier
     from ml.eta_regressor import get_eta_regressor
     from ml.anomaly_detector import get_anomaly_detector
     from routing.graph_router import get_graph
+    from config import settings
+    from pathlib import Path
 
-    get_delay_classifier()
-    get_eta_regressor()
-    get_anomaly_detector()
+    clf = get_delay_classifier()
+    reg = get_eta_regressor()
+    det = get_anomaly_detector()
+
+    models_missing = (
+        clf.model is None or
+        reg.model_median is None or
+        det.model is None
+    )
+
+    if models_missing:
+        csv_path = Path(__file__).parent / "data" / "dynamic_supply_chain_logistics_dataset.csv"
+        if csv_path.exists():
+            logger.info("Saved models not found — auto-training on startup...")
+            try:
+                from ml.train import train_all
+                train_all(str(csv_path))
+                logger.info("Auto-training complete")
+                # Reload singletons after training
+                from ml import delay_classifier as _dc
+                from ml import eta_regressor as _er
+                from ml import anomaly_detector as _ad
+                _dc._classifier = None
+                _er._regressor = None
+                _ad._detector = None
+                get_delay_classifier()
+                get_eta_regressor()
+                get_anomaly_detector()
+            except Exception as e:
+                logger.error("Auto-training failed: %s — predictions will use defaults", e)
+        else:
+            logger.warning(
+                "No saved models and no CSV at %s — predictions will use defaults. "
+                "Run: python -m ml.train", csv_path
+            )
+
     get_graph()
     logger.info("ML models and routing graph loaded")
 
