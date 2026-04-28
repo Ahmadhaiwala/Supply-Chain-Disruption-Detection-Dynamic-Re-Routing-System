@@ -28,7 +28,7 @@ const securityHeaders = [
       // Fonts from self (next/font self-hosts them)
       "font-src 'self'",
       // API calls: your Render backend + external APIs
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || ''} https://api.openweathermap.org https://api.tomtom.com wss:`,
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || ''} ${process.env.NEXT_PUBLIC_API_URL?.replace(/^http/, 'ws') || ''} https://api.openweathermap.org https://api.tomtom.com ws: wss:`,
       // Leaflet CSS from unpkg
       "style-src-elem 'self' 'unsafe-inline' https://unpkg.com",
       // Workers for map rendering
