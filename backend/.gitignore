@@ -28,8 +28,8 @@ ENV/
 .env.local
 .env.*.local
 
-# ML saved models
-ml/saved_models/
+# ML saved models — DO NOT ignore; pre-trained .joblib files must be deployed
+# ml/saved_models/
 
 # Database
 data/*.db

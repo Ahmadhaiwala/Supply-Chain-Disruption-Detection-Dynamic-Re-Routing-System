@@ -32,8 +32,8 @@ class DelayClassifier:
             self.model = joblib.load(MODEL_PATH)
             logger.info("DelayClassifier loaded from %s", MODEL_PATH)
         else:
-            logger.warning("No saved DelayClassifier found — using untrained model. Call train() first.")
-            self.model = self._build_model()
+            logger.warning("No saved DelayClassifier found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH)
+            self.model = None
 
     def _build_model(self) -> xgb.XGBClassifier:
         return xgb.XGBClassifier(

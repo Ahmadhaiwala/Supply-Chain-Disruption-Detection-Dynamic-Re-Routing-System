@@ -56,10 +56,10 @@ class ETARegressor:
             self.model_upper = joblib.load(MODEL_PATH_UPPER)
             logger.info("ETARegressor loaded from saved models")
         else:
-            logger.warning("No saved ETARegressor found — call train() first.")
-            self.model_median = self._build_model(0.5)
-            self.model_lower = self._build_model(0.1)
-            self.model_upper = self._build_model(0.9)
+            logger.warning("No saved ETARegressor found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH_MEDIAN)
+            self.model_median = None
+            self.model_lower = None
+            self.model_upper = None
 
     def train(self, X: np.ndarray, y_minutes: np.ndarray) -> dict:
         """

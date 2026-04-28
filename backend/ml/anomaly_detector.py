@@ -46,9 +46,9 @@ class AnomalyDetector:
             self.scaler = joblib.load(SCALER_PATH)
             logger.info("AnomalyDetector loaded from saved models")
         else:
-            logger.warning("No saved AnomalyDetector found — call train() first.")
-            self.model = self._build_model()
-            self.scaler = StandardScaler()
+            logger.warning("No saved AnomalyDetector found at %s — model will return defaults. Train or deploy model file.", MODEL_PATH)
+            self.model = None
+            self.scaler = None
 
     def train(self, X_trajectory: np.ndarray) -> dict:
         """
