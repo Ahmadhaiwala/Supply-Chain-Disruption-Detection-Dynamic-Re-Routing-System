@@ -313,7 +313,7 @@ export function AddShipmentDrawer({ open, onClose }: Props) {
                   </div>
 
                   {/* Origin / Destination */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
                         <MapPin className="inline h-3 w-3 mr-1" />Origin
@@ -372,7 +372,7 @@ export function AddShipmentDrawer({ open, onClose }: Props) {
                     <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
                       <Package className="inline h-3 w-3 mr-1" />Cargo Type
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {CARGO_TYPES.map(c => (
                         <button
                           key={c}

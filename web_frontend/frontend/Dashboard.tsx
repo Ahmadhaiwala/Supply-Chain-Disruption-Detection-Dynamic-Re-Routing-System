@@ -27,7 +27,7 @@ function DashboardMain() {
   useShipmentWebSocket(selectedShipmentId)
 
   return (
-    <main className="pt-20 pb-6 px-6">
+    <main className="pt-20 pb-6 px-4 md:px-6">
       <section className="mb-6">
         <KPICards />
       </section>

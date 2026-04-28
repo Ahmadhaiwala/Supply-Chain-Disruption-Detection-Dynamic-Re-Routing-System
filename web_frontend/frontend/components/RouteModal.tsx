@@ -255,16 +255,16 @@ export function RouteModal() {
           )}
 
           {/* ── SHAP explanation ── */}
-          <div className="glass-inner p-4">
+          <div className="glass-inner p-4 overflow-x-auto">
             <h3 className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-4">
               Risk Factor Analysis (SHAP Explanation)
             </h3>
-            <div className="h-48">
+            <div className="h-48 min-w-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={shapData}
                   layout="vertical"
-                  margin={{ top: 0, right: 20, bottom: 0, left: 130 }}
+                  margin={{ top: 0, right: 10, bottom: 0, left: 80 }}
                 >
                   <XAxis
                     type="number"
@@ -279,7 +279,7 @@ export function RouteModal() {
                     stroke="#64748b"
                     fontSize={11}
                     tickLine={false}
-                    width={125}
+                    width={90}
                   />
                   <Bar dataKey="impact" radius={[0, 4, 4, 0]}>
                     {shapData.map((entry, index) => (

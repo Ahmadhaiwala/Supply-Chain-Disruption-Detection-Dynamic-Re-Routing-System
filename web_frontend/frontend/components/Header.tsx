@@ -39,11 +39,11 @@ export function Header() {
   return (
     <>
       <header
-        className="fixed top-0 right-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-4 md:px-6"
-      style={{
-        left: sidebarCollapsed ? 72 : 240,
-        transition: 'left 0.3s ease-in-out',
-      }}
+        className={cn(
+          'fixed top-0 right-0 left-0 z-30 h-16 glass-card border-b border-white/10 flex items-center justify-between px-4 md:px-6',
+          'transition-[left] duration-300 ease-in-out',
+          sidebarCollapsed ? 'md:left-[72px]' : 'md:left-[240px]',
+        )}
     >
       {/* Left — Hamburger + Title */}
       <div className="flex items-center gap-3 min-w-0">

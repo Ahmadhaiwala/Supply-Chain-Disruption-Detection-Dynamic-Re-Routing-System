@@ -415,7 +415,7 @@ export function AdvisorPanel({ open, onClose }: AdvisorPanelProps) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-            className="fixed right-0 top-0 bottom-0 z-50 w-[400px] flex flex-col"
+            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[400px] flex flex-col"
             style={{
               background: 'rgba(15, 23, 42, 0.95)',
               backdropFilter: 'blur(24px)',
