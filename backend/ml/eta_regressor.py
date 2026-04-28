@@ -111,7 +111,10 @@ class ETARegressor:
             return None, None, None
 
         try:
-            x = feature_vector.reshape(1, -1)
+            import pandas as pd
+            from ml.feature_engineering import FEATURE_COLUMNS
+            
+            x = pd.DataFrame(feature_vector.reshape(1, -1), columns=FEATURE_COLUMNS)
             median = float(self.model_median.predict(x)[0])
             lower = float(self.model_lower.predict(x)[0])
             upper = float(self.model_upper.predict(x)[0])

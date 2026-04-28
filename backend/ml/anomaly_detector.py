@@ -95,7 +95,10 @@ class AnomalyDetector:
             return 0.0
 
         try:
-            X_scaled = self.scaler.transform(trajectory_vector)
+            import pandas as pd
+            from ml.feature_engineering import TRAJECTORY_FEATURES
+            x = pd.DataFrame(trajectory_vector.reshape(1, -1), columns=TRAJECTORY_FEATURES)
+            X_scaled = self.scaler.transform(x)
             raw = self.model.score_samples(X_scaled)
             return float(self._normalize_scores(raw)[0])
         except Exception as e:

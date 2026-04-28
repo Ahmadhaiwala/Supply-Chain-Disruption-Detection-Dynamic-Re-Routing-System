@@ -124,7 +124,8 @@ class DelayClassifier:
             return 0.5
 
         try:
-            x = feature_vector.reshape(1, -1)
+            import pandas as pd
+            x = pd.DataFrame(feature_vector.reshape(1, -1), columns=FEATURE_COLUMNS)
             return float(self.model.predict_proba(x)[0, 1])
         except Exception as e:
             logger.error("Prediction failed: %s. Returning default 0.5", e)
