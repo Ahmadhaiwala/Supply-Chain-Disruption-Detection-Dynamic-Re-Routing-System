@@ -38,6 +38,7 @@ data/*.sqlite3
 
 # Dataset files (large, download separately)
 data/*.csv
+!data/dynamic_supply_chain_logistics_dataset.csv
 data/*.xlsx
 data/*.xls
 data/*.parquet

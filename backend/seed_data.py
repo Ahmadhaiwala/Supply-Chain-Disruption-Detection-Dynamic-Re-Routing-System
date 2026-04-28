@@ -258,10 +258,62 @@ async def seed():
     print("=" * 70)
 
 
+async def seed_fallback():
+    """Generates a small set of fallback data if the CSV is missing."""
+    await init_db()
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import delete
+        await session.execute(delete(Alert))
+        await session.execute(delete(Shipment))
+        await session.commit()
+        logger.info("Cleared existing data (Fallback Mode)")
+
+        # Major US hubs fallback
+        shipment = Shipment(
+            booking_id="US-MOCK-001",
+            origin_lat=34.0522, origin_lon=-118.2437, # LA
+            destination_lat=41.8781, destination_lon=-87.6298, # Chicago
+            current_lat=34.0522, current_lon=-118.2437,
+            status="IN_TRANSIT",
+            is_delayed=False,
+            current_risk_score=0.15,
+            risk_level="LOW",
+            planned_eta=datetime.now(timezone.utc) + timedelta(days=2),
+            trip_start=datetime.now(timezone.utc),
+            vehicle_type="53ft Dry Van",
+            cargo_type="Electronics",
+            carrier_id="FedEx Freight",
+            distance_km=3200.0
+        )
+        session.add(shipment)
+        
+        # Add one high risk mock
+        high_risk = Shipment(
+            booking_id="US-MOCK-HIGH",
+            origin_lat=40.7128, origin_lon=-74.0060, # NY
+            destination_lat=25.7617, destination_lon=-80.1918, # Miami
+            current_lat=35.0, current_lon=-78.0,
+            status="DELAYED",
+            is_delayed=True,
+            current_risk_score=0.88,
+            risk_level="HIGH",
+            planned_eta=datetime.now(timezone.utc) + timedelta(hours=12),
+            trip_start=datetime.now(timezone.utc) - timedelta(days=1),
+            vehicle_type="Reefer Trailer",
+            cargo_type="Pharmaceuticals",
+            carrier_id="UPS Freight",
+            distance_km=2000.0
+        )
+        session.add(high_risk)
+        
+        await session.commit()
+        logger.info("✅ Inserted fallback shipments")
+
 async def auto_seed():
     """Seed database on every startup — ensures fresh sample data."""
     if not CSV_PATH.exists():
-        logger.warning("Seed CSV not found at %s, skipping auto-seed", CSV_PATH)
+        logger.warning("Seed CSV not found at %s. Running fallback seed...", CSV_PATH)
+        await seed_fallback()
         return
 
     logger.info("Running auto-seed to ensure fresh data...")
