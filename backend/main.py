@@ -4,10 +4,12 @@ FastAPI Backend Entry Point
 """
 import logging
 import os
+import traceback
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from config import settings
 from database import init_db
@@ -83,6 +85,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── Global Exception Handler ────────────────────────────────────────────────
+# Catches ALL unhandled exceptions so they are converted to JSONResponses
+# inside the ExceptionMiddleware scope. Without this, non-HTTPException errors
+# (like sklearn NotFittedError) propagate past the CORS middleware, which then
+# cannot add Access-Control-Allow-Origin to the 500 response, causing the
+# browser to block it with a CORS error.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc)
+    logger.debug("Traceback:\n%s", traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error": str(exc)},
+    )
+
 
 # ─── Routers ──────────────────────────────────────────────────────────────────
 app.include_router(shipments_router)
